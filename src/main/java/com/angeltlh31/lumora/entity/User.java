@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+//Cung cấp mẫu thiết kế Builder Pattern, giúp mày tạo một đối tượng User mới cực kỳ ngắn gọn kiểu User.builder().username("abc").build() thay vì dùng new User().
 @Builder
 public class User {
 
