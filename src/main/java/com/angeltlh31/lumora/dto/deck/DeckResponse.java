@@ -1,11 +1,11 @@
-package com.angeltlh31.lumora.dto;
+package com.angeltlh31.lumora.dto.deck;
 
 import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
 
-// Du lieu tra VE cho client. Chi chua nhung gi client can thay, khong lo he thong (vd: khong lo owner ca 1 User object).
+// Du lieu tra VE cho client. Chi chua nhung gi client can thay.
 @Getter
 @Builder
 public class DeckResponse {

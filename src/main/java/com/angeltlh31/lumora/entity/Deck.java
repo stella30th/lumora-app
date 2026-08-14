@@ -24,9 +24,6 @@ public class Deck {
     @Column(length = 500)
     private String description;
 
-    // FetchType.LAZY: chi query User chu so huu khi thuc su goi deck.getOwner().
-    // Neu de mac dinh (EAGER) thi moi lan lay 1 Deck se tu dong JOIN sang bang users,
-    // du minh khong can - day la dieu canh bao Open-In-View da nhac truoc do.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id", nullable = false)
     private User owner;

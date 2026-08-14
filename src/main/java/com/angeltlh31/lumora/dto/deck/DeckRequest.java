@@ -1,4 +1,4 @@
-package com.angeltlh31.lumora.dto;
+package com.angeltlh31.lumora.dto.deck;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

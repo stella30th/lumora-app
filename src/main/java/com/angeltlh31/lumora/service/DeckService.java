@@ -1,7 +1,7 @@
 package com.angeltlh31.lumora.service;
 
-import com.angeltlh31.lumora.dto.DeckRequest;
-import com.angeltlh31.lumora.dto.DeckResponse;
+import com.angeltlh31.lumora.dto.deck.DeckRequest;
+import com.angeltlh31.lumora.dto.deck.DeckResponse;
 import com.angeltlh31.lumora.entity.Deck;
 import com.angeltlh31.lumora.entity.User;
 import com.angeltlh31.lumora.exception.ResourceNotFoundException;
@@ -18,7 +18,7 @@ import java.util.List;
 @Transactional
 public class DeckService {
 
-    private final DeckRepository deckRepository;
+    private final DeckRepository deckRepository; //DI
     private final UserRepository userRepository;
 
     public DeckResponse createDeck(Long ownerId, DeckRequest request) {
