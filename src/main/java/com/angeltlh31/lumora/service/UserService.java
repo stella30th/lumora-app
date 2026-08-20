@@ -7,6 +7,7 @@ import com.angeltlh31.lumora.exception.DuplicateResourceException;
 import com.angeltlh31.lumora.exception.ResourceNotFoundException;
 import com.angeltlh31.lumora.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public UserResponse registerUser(UserRegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
@@ -28,9 +30,10 @@ public class UserService {
         User user = User.builder()
                 .username(request.getUsername())
                 .email(request.getEmail())
-                // TODO: dang luu plain text. Se thay bang BCryptPasswordEncoder.encode(...)
-                // khi hoc Spring Security - can them dependency spring-boot-starter-security truoc.
-                .passwordHash(request.getPassword())
+                // Hash bang BCrypt - moi lan encode() cung 1 input se ra output KHAC nhau (co salt ngau nhien
+                // gan trong chinh chuoi hash), nen khong the "giai ma" nguoc lai, chi co the SO KHOP
+                // bang passwordEncoder.matches(rawPassword, hash) luc Login.
+                .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .build();
 
         return toResponse(userRepository.save(user));
