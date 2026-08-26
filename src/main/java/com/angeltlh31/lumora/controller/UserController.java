@@ -1,5 +1,7 @@
 package com.angeltlh31.lumora.controller;
 
+import com.angeltlh31.lumora.dto.user.LoginRequest;
+import com.angeltlh31.lumora.dto.user.LoginResponse;
 import com.angeltlh31.lumora.dto.user.UserRegisterRequest;
 import com.angeltlh31.lumora.dto.user.UserResponse;
 import com.angeltlh31.lumora.service.UserService;
@@ -20,6 +22,11 @@ public class UserController {
     public ResponseEntity<UserResponse> register(@Valid @RequestBody UserRegisterRequest request) {
         UserResponse response = userService.registerUser(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        return ResponseEntity.ok(userService.login(request));
     }
 
     @GetMapping("/{id}")

@@ -43,6 +43,26 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
+        <!-- Thu vien tao/doc JWT. jjwt-api = interface dung luc compile,
+             jjwt-impl + jjwt-jackson chi can luc runtime (impl thuc te + serialize claims sang JSON). -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>0.12.6</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>0.12.6</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>0.12.6</version>
+            <scope>runtime</scope>
+        </dependency>
+
         <!-- compileOnly + annotationProcessor (Gradle) => 1 dependency scope "provided" (Maven)
              vi provided co mat o ca compile lan test classpath, annotation processor
              duoc maven-compiler-plugin tu dong lay tu day, khong can khai bao rieng. -->

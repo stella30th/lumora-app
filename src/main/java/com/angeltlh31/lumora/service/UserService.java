@@ -1,11 +1,15 @@
 package com.angeltlh31.lumora.service;
 
+import com.angeltlh31.lumora.dto.user.LoginRequest;
+import com.angeltlh31.lumora.dto.user.LoginResponse;
 import com.angeltlh31.lumora.dto.user.UserRegisterRequest;
 import com.angeltlh31.lumora.dto.user.UserResponse;
 import com.angeltlh31.lumora.entity.User;
 import com.angeltlh31.lumora.exception.DuplicateResourceException;
+import com.angeltlh31.lumora.exception.InvalidCredentialException;
 import com.angeltlh31.lumora.exception.ResourceNotFoundException;
 import com.angeltlh31.lumora.repository.UserRepository;
+import com.angeltlh31.lumora.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -18,6 +22,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
     public UserResponse registerUser(UserRegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
@@ -37,6 +42,29 @@ public class UserService {
                 .build();
 
         return toResponse(userRepository.save(user));
+    }
+
+    // readOnly = true: login chi doc DB (khong ghi), Hibernate bo qua buoc kiem tra dirty checking
+    // luc commit transaction - nhanh hon mot chut va noi ro y dinh cho nguoi doc code.
+    @Transactional(readOnly = true)
+    public LoginResponse login(LoginRequest request) {
+        // Co tinh dung CUNG 1 message cho ca 2 nhanh loi (xem InvalidCredentialException).
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new InvalidCredentialException("Email hoac password khong dung"));
+
+        // matches(raw, hash): hash lai raw roi so voi hash da luu - KHONG giai ma hash de so sanh truc tiep
+        // (khong the, BCrypt la ham bam 1 chieu - xem docs/recap-day5.md).
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new InvalidCredentialException("Email hoac password khong dung");
+        }
+
+        String token = jwtService.generateToken(user.getId(), user.getUsername());
+
+        return LoginResponse.builder()
+                .token(token)
+                .userId(user.getId())
+                .username(user.getUsername())
+                .build();
     }
 
     @Transactional(readOnly = true)
