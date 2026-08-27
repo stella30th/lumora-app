@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,18 +19,20 @@ public class DeckController {
 
     private final DeckService deckService;
 
-    // TODO: ownerId dang truyen tam qua query param.
-    // Khi hoc Spring Security se thay bang cach lay tu JWT token (Principal),
-    // luc do client khong con phai tu gui ownerId nua (tranh gia mao chiem deck nguoi khac).
+    // @AuthenticationPrincipal Long ownerId: Spring Security tu lay "principal" ma
+    // JwtAuthenticationFilter (buoc 5) da ghi vao SecurityContext va bom thang vao tham so nay -
+    // day chinh la Authentication that su thay the cho @RequestParam Long ownerId truoc day
+    // (client tu xung la ai cung duoc). Gio ownerId luon la userId lay tu token da verify chu ky,
+    // khong the gia mao.
     @PostMapping
-    public ResponseEntity<DeckResponse> createDeck(@RequestParam Long ownerId,
+    public ResponseEntity<DeckResponse> createDeck(@AuthenticationPrincipal Long ownerId,
                                                     @Valid @RequestBody DeckRequest request) {
         DeckResponse response = deckService.createDeck(ownerId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping
-    public ResponseEntity<List<DeckResponse>> getMyDecks(@RequestParam Long ownerId) {
+    public ResponseEntity<List<DeckResponse>> getMyDecks(@AuthenticationPrincipal Long ownerId) {
         return ResponseEntity.ok(deckService.getDecksByOwner(ownerId));
     }
 

@@ -1,5 +1,7 @@
 package com.angeltlh31.lumora.security;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -40,5 +42,26 @@ public class JwtService {
                 .expiration(expiry)
                 .signWith(getSigningKey())
                 .compact();
+    }
+
+    // Buoc 5: chieu nguoc lai cua generateToken - nhan 1 chuoi token, VERIFY chu ky bang
+    // cung 1 secret key (getSigningKey() dung lai tu luc generate), roi doc "subject" ra userId.
+    //
+    // Jwts.parser().verifyWith(key)... la buoc quan trong nhat: neu ai do sua payload (vd doi
+    // subject tu "1" thanh "2" de gia mao thanh user khac) ma khong co secret key thi chu ky
+    // se khong khop, parseSignedClaims() nem JwtException ngay - JwtAuthenticationFilter (buoc
+    // duoi day) se bat exception nay va coi nhu request khong co token hop le.
+    //
+    // JwtException la lop cha cho ca: ExpiredJwtException (token het han - so voi "expiration"
+    // luc generate), SignatureException (chu ky sai/bi sua payload), MalformedJwtException
+    // (chuoi token sai dinh dang, khong phai header.payload.signature).
+    public Long extractUserId(String token) throws JwtException {
+        Claims claims = Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+
+        return Long.valueOf(claims.getSubject());
     }
 }
