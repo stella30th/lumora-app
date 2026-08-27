@@ -43,6 +43,15 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
+        <!-- springdoc-openapi: doc annotation tren Controller/DTO -> tu sinh OpenAPI spec (/v3/api-docs)
+             + Swagger UI (/swagger-ui.html) de test API tren trinh duyet. Ban 3.x tuong thich Spring
+             Boot 4.x (ban 2.x chi cho Spring Boot 3.x). -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>3.1.0</version>
+        </dependency>
+
         <!-- Thu vien tao/doc JWT. jjwt-api = interface dung luc compile,
              jjwt-impl + jjwt-jackson chi can luc runtime (impl thuc te + serialize claims sang JSON). -->
         <dependency>

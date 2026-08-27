@@ -46,7 +46,16 @@ public class SecurityConfig {
                 // (vi chinh no la noi TAO ra token / tao ra user) - moi request khac deu phai
                 // duoc JwtAuthenticationFilter xac thuc thanh cong truoc do.
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/users/register", "/api/users/login").permitAll()
+                        .requestMatchers(
+                                "/api/users/register",
+                                "/api/users/login",
+                                // Swagger UI + OpenAPI spec: phai permitAll, khong thi chinh
+                                // JwtAuthenticationFilter/authenticated() ben duoi se chan luon
+                                // trang Swagger (403/401) truoc khi ban kip nhap token vao.
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**"
+                        ).permitAll()
                         .anyRequest().authenticated())
                 // addFilterBefore: chen JwtAuthenticationFilter vao TRUOC
                 // UsernamePasswordAuthenticationFilter (filter mac dinh cua Spring Security lo
