@@ -21,10 +21,9 @@ public class CardController {
     private final CardService cardService;
 
     // Ngay 9: them @AuthenticationPrincipal Long ownerId cho ca 3 endpoint GHI (create/update/
-    // delete) - day la nguoi dang goi, se duoc CardService doi chieu voi chu Deck cha. 2 endpoint
-    // DOC (getCardsByDeck/getCardById) co tinh CHUA dung ownerId: van bat buoc phai co token hop
-    // le moi goi duoc (SecurityConfig.anyRequest().authenticated() tu ngay 7), nhung chua gioi han
-    // ai cung xem duoc Card cua Deck bat ky - xem giai thich trong docs/recap-day9.md.
+    // delete) - day la nguoi dang goi, se duoc CardService doi chieu voi chu Deck cha. (Ngay 9,
+    // 2 endpoint DOC ben duoi con "ho": chi can token hop le la xem duoc Card cua Deck bat ky,
+    // khong phan biet public/private - da xu ly o Ngay 10, xem comment truoc getCardsByDeck.)
     @PostMapping("/api/decks/{deckId}/cards")
     public ResponseEntity<CardResponse> createCard(@PathVariable Long deckId,
                                                      @AuthenticationPrincipal Long ownerId,
@@ -33,14 +32,18 @@ public class CardController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    // Ngay 10: them @AuthenticationPrincipal Long requesterId cho ca 2 endpoint DOC - truoc
+    // Ngay 10, comment o day con ghi 2 endpoint nay "chua dung ownerId", gio da het con no do.
     @GetMapping("/api/decks/{deckId}/cards")
-    public ResponseEntity<List<CardResponse>> getCardsByDeck(@PathVariable Long deckId) {
-        return ResponseEntity.ok(cardService.getCardsByDeck(deckId));
+    public ResponseEntity<List<CardResponse>> getCardsByDeck(@PathVariable Long deckId,
+                                                              @AuthenticationPrincipal Long requesterId) {
+        return ResponseEntity.ok(cardService.getCardsByDeck(deckId, requesterId));
     }
 
     @GetMapping("/api/cards/{id}")
-    public ResponseEntity<CardResponse> getCardById(@PathVariable Long id) {
-        return ResponseEntity.ok(cardService.getCardById(id));
+    public ResponseEntity<CardResponse> getCardById(@PathVariable Long id,
+                                                     @AuthenticationPrincipal Long requesterId) {
+        return ResponseEntity.ok(cardService.getCardById(id, requesterId));
     }
 
     @PutMapping("/api/cards/{id}")

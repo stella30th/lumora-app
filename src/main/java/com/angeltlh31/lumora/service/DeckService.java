@@ -44,9 +44,15 @@ public class DeckService {
                 .toList();
     }
 
+    // Ngay 10: doc (read) KHONG dung logic "chi chu moi duoc" nhu ghi (write). Deck co san cot
+    // isPublic - nguoi goi duoc xem neu: deck la public, HOAC nguoi goi chinh la chu. Vi vay
+    // nhan them requesterId (tu JWT, giong ownerId o cac method ghi) va dung verifyReadAccess
+    // (KHAC verifyOwnership) de kiem tra.
     @Transactional(readOnly = true)
-    public DeckResponse getDeckById(Long id) {
-        return toResponse(findDeckOrThrow(id));
+    public DeckResponse getDeckById(Long id, Long requesterId) {
+        Deck deck = findDeckOrThrow(id);
+        verifyReadAccess(deck, requesterId);
+        return toResponse(deck);
     }
 
     // Ngay 9: nhan them ownerId (lay tu token qua Controller), KHONG con tin tuong tuyet doi
@@ -81,6 +87,18 @@ public class DeckService {
         if (!deck.getOwner().getId().equals(ownerId)) {
             throw new ForbiddenException(
                     "Ban khong co quyen thao tac tren Deck id=" + deck.getId());
+        }
+    }
+
+    // Ngay 10: quyen DOC - khac verifyOwnership (chi chu moi qua duoc, dung cho GHI).
+    // Cho phep khi Deck la public, HOAC nguoi goi la chu. Tach rieng ham nay thay vi sua
+    // verifyOwnership vi 2 ham mang ngu nghia nghiep vu khac nhau (owner-only vs owner-OR-public)
+    // - gop chung se phai them tham so co/khong check public, doc kho hieu hon la tach ro.
+    private void verifyReadAccess(Deck deck, Long requesterId) {
+        boolean isOwner = deck.getOwner().getId().equals(requesterId);
+        if (!deck.isPublic() && !isOwner) {
+            throw new ForbiddenException(
+                    "Ban khong co quyen xem Deck id=" + deck.getId());
         }
     }
 

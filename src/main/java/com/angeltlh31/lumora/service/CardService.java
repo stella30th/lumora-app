@@ -39,8 +39,15 @@ public class CardService {
         return toResponse(cardRepository.save(card));
     }
 
+    // Ngay 10: Card khong co isPublic rieng - phai lay Deck cha ra roi ap dung quyen doc cua
+    // Deck (giong het cach Ngay 9 xu ly quyen GHI qua Deck cha). Phai query Deck truoc de lay
+    // duoc trang thai isPublic/owner ma kiem tra, khong the chi dua vao deckId nhu truoc.
     @Transactional(readOnly = true)
-    public List<CardResponse> getCardsByDeck(Long deckId) {
+    public List<CardResponse> getCardsByDeck(Long deckId, Long requesterId) {
+        Deck deck = deckRepository.findById(deckId)
+                .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay Deck id=" + deckId));
+        verifyReadAccess(deck, requesterId);
+
         return cardRepository.findByDeckId(deckId)
                 .stream()
                 .map(this::toResponse)
@@ -48,8 +55,10 @@ public class CardService {
     }
 
     @Transactional(readOnly = true)
-    public CardResponse getCardById(Long id) {
-        return toResponse(findCardOrThrow(id));
+    public CardResponse getCardById(Long id, Long requesterId) {
+        Card card = findCardOrThrow(id);
+        verifyReadAccess(card.getDeck(), requesterId);
+        return toResponse(card);
     }
 
     public CardResponse updateCard(Long id, Long ownerId, CardRequest request) {
@@ -80,6 +89,18 @@ public class CardService {
         if (!deck.getOwner().getId().equals(ownerId)) {
             throw new ForbiddenException(
                     "Ban khong co quyen thao tac tren Deck id=" + deck.getId());
+        }
+    }
+
+    // Ngay 10: ban sao co chu y cua DeckService.verifyReadAccess - CHUA gop chung thanh 1
+    // class dung chung (vd AuthorizationService) vi hien tai chi co 2 noi dung logic nay va
+    // gop som se lam tang do phuc tap khong can thiet ("premature abstraction"). Neu sau nay co
+    // them resource thu 3 can kieu quyen doc tuong tu, day se la luc nen tach ra.
+    private void verifyReadAccess(Deck deck, Long requesterId) {
+        boolean isOwner = deck.getOwner().getId().equals(requesterId);
+        if (!deck.isPublic() && !isOwner) {
+            throw new ForbiddenException(
+                    "Ban khong co quyen xem Deck id=" + deck.getId());
         }
     }
 

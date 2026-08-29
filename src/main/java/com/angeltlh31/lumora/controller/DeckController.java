@@ -36,9 +36,13 @@ public class DeckController {
         return ResponseEntity.ok(deckService.getDecksByOwner(ownerId));
     }
 
+    // Ngay 10: them @AuthenticationPrincipal Long requesterId - dat ten "requesterId" (khong
+    // phai "ownerId") vi nguoi goi CHUA CHAC la chu; Service se tu quyet dinh co cho xem hay
+    // khong dua vao isPublic cua Deck.
     @GetMapping("/{id}")
-    public ResponseEntity<DeckResponse> getDeckById(@PathVariable Long id) {
-        return ResponseEntity.ok(deckService.getDeckById(id));
+    public ResponseEntity<DeckResponse> getDeckById(@PathVariable Long id,
+                                                     @AuthenticationPrincipal Long requesterId) {
+        return ResponseEntity.ok(deckService.getDeckById(id, requesterId));
     }
 
     // Ngay 9: them @AuthenticationPrincipal Long ownerId - KHONG dung de tao du lieu (nhu
