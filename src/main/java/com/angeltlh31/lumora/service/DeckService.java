@@ -4,6 +4,7 @@ import com.angeltlh31.lumora.dto.deck.DeckRequest;
 import com.angeltlh31.lumora.dto.deck.DeckResponse;
 import com.angeltlh31.lumora.entity.Deck;
 import com.angeltlh31.lumora.entity.User;
+import com.angeltlh31.lumora.exception.ForbiddenException;
 import com.angeltlh31.lumora.exception.ResourceNotFoundException;
 import com.angeltlh31.lumora.repository.DeckRepository;
 import com.angeltlh31.lumora.repository.UserRepository;
@@ -48,8 +49,13 @@ public class DeckService {
         return toResponse(findDeckOrThrow(id));
     }
 
-    public DeckResponse updateDeck(Long id, DeckRequest request) {
+    // Ngay 9: nhan them ownerId (lay tu token qua Controller), KHONG con tin tuong tuyet doi
+    // vao PathVariable id nua. verifyOwnership nem ForbiddenException truoc khi kip sua gi ca
+    // neu id nay khong phai Deck cua ownerId dang goi.
+    public DeckResponse updateDeck(Long id, Long ownerId, DeckRequest request) {
         Deck deck = findDeckOrThrow(id);
+        verifyOwnership(deck, ownerId);
+
         deck.setName(request.getName());
         deck.setDescription(request.getDescription());
         deck.setPublic(request.isPublic());
@@ -57,13 +63,25 @@ public class DeckService {
         return toResponse(deck);
     }
 
-    public void deleteDeck(Long id) {
-        deckRepository.delete(findDeckOrThrow(id));
+    public void deleteDeck(Long id, Long ownerId) {
+        Deck deck = findDeckOrThrow(id);
+        verifyOwnership(deck, ownerId);
+        deckRepository.delete(deck);
     }
 
     private Deck findDeckOrThrow(Long id) {
         return deckRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay Deck id=" + id));
+    }
+
+    // Tach rieng 1 method dung chung cho ca updateDeck/deleteDeck: so sanh chu so huu THAT
+    // (deck.getOwner().getId(), doc tu database) voi nguoi dang goi (ownerId, lay tu JWT da
+    // verify) - khong khop nghia la dung Deck ton tai that, nhung khong phai cua nguoi nay.
+    private void verifyOwnership(Deck deck, Long ownerId) {
+        if (!deck.getOwner().getId().equals(ownerId)) {
+            throw new ForbiddenException(
+                    "Ban khong co quyen thao tac tren Deck id=" + deck.getId());
+        }
     }
 
     private DeckResponse toResponse(Deck deck) {

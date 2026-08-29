@@ -43,6 +43,19 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
     }
 
+    // Ngay 9 - Authorization: khac 401 (handleInvalidCredential/authenticationEntryPoint o
+    // SecurityConfig - "chua biet anh la ai") - day la 403 ("biet anh la ai roi, nhung anh
+    // khong co quyen voi cai NAY"). Nem ra tu Service SAU KHI da xac dinh duoc chu so huu that
+    // su cua tai nguyen (Deck/Card), nen khong the lam bang @PreAuthorize khai bao tinh duoc.
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<Map<String, Object>> handleForbidden(ForbiddenException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.FORBIDDEN.value());
+        body.put("message", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
+    }
+
     // Duoc nem ra khi @Valid tren @RequestBody phat hien field vi pham (vd @NotBlank, @Size)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex) {

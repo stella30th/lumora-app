@@ -41,15 +41,20 @@ public class DeckController {
         return ResponseEntity.ok(deckService.getDeckById(id));
     }
 
+    // Ngay 9: them @AuthenticationPrincipal Long ownerId - KHONG dung de tao du lieu (nhu
+    // createDeck) ma de DeckService so sanh voi chu so huu that su cua Deck id nay. Neu khong
+    // khop, Service nem ForbiddenException -> GlobalExceptionHandler tra 403.
     @PutMapping("/{id}")
     public ResponseEntity<DeckResponse> updateDeck(@PathVariable Long id,
+                                                    @AuthenticationPrincipal Long ownerId,
                                                     @Valid @RequestBody DeckRequest request) {
-        return ResponseEntity.ok(deckService.updateDeck(id, request));
+        return ResponseEntity.ok(deckService.updateDeck(id, ownerId, request));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteDeck(@PathVariable Long id) {
-        deckService.deleteDeck(id);
+    public ResponseEntity<Void> deleteDeck(@PathVariable Long id,
+                                            @AuthenticationPrincipal Long ownerId) {
+        deckService.deleteDeck(id, ownerId);
         return ResponseEntity.noContent().build();
     }
 }
