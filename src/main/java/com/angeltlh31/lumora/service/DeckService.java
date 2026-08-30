@@ -44,6 +44,17 @@ public class DeckService {
                 .toList();
     }
 
+    // Ngay 11: khac getDecksByOwner o cho KHONG loc theo ownerId nao ca - tra ve TAT CA Deck
+    // co is_public = true, bat ke ai la chu. Khong can requesterId/verifyReadAccess vi ban than
+    // dieu kien isPublic = true da la "ai xem cung duoc", khong con gi de kiem tra them.
+    @Transactional(readOnly = true)
+    public List<DeckResponse> getPublicDecks() {
+        return deckRepository.findByIsPublicTrue()
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
     // Ngay 10: doc (read) KHONG dung logic "chi chu moi duoc" nhu ghi (write). Deck co san cot
     // isPublic - nguoi goi duoc xem neu: deck la public, HOAC nguoi goi chinh la chu. Vi vay
     // nhan them requesterId (tu JWT, giong ownerId o cac method ghi) va dung verifyReadAccess

@@ -36,6 +36,7 @@ public class UserController {
         return ResponseEntity.ok(userService.login(request));
     }
 
+    @Operation(summary = "Xem thong tin user theo id")
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
         return ResponseEntity.ok(userService.getUserById(id));

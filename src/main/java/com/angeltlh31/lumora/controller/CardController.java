@@ -3,6 +3,7 @@ package com.angeltlh31.lumora.controller;
 import com.angeltlh31.lumora.dto.card.CardRequest;
 import com.angeltlh31.lumora.dto.card.CardResponse;
 import com.angeltlh31.lumora.service.CardService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,6 +25,7 @@ public class CardController {
     // delete) - day la nguoi dang goi, se duoc CardService doi chieu voi chu Deck cha. (Ngay 9,
     // 2 endpoint DOC ben duoi con "ho": chi can token hop le la xem duoc Card cua Deck bat ky,
     // khong phan biet public/private - da xu ly o Ngay 10, xem comment truoc getCardsByDeck.)
+    @Operation(summary = "Tao Card moi trong 1 Deck (chi chu so huu Deck cha)")
     @PostMapping("/api/decks/{deckId}/cards")
     public ResponseEntity<CardResponse> createCard(@PathVariable Long deckId,
                                                      @AuthenticationPrincipal Long ownerId,
@@ -34,18 +36,21 @@ public class CardController {
 
     // Ngay 10: them @AuthenticationPrincipal Long requesterId cho ca 2 endpoint DOC - truoc
     // Ngay 10, comment o day con ghi 2 endpoint nay "chua dung ownerId", gio da het con no do.
+    @Operation(summary = "Lay danh sach Card trong 1 Deck (yeu cau Deck public hoac la chu so huu)")
     @GetMapping("/api/decks/{deckId}/cards")
     public ResponseEntity<List<CardResponse>> getCardsByDeck(@PathVariable Long deckId,
                                                               @AuthenticationPrincipal Long requesterId) {
         return ResponseEntity.ok(cardService.getCardsByDeck(deckId, requesterId));
     }
 
+    @Operation(summary = "Xem chi tiet 1 Card (yeu cau Deck cha public hoac la chu so huu)")
     @GetMapping("/api/cards/{id}")
     public ResponseEntity<CardResponse> getCardById(@PathVariable Long id,
                                                      @AuthenticationPrincipal Long requesterId) {
         return ResponseEntity.ok(cardService.getCardById(id, requesterId));
     }
 
+    @Operation(summary = "Cap nhat Card (chi chu so huu Deck cha)")
     @PutMapping("/api/cards/{id}")
     public ResponseEntity<CardResponse> updateCard(@PathVariable Long id,
                                                      @AuthenticationPrincipal Long ownerId,
@@ -53,6 +58,7 @@ public class CardController {
         return ResponseEntity.ok(cardService.updateCard(id, ownerId, request));
     }
 
+    @Operation(summary = "Xoa Card (chi chu so huu Deck cha)")
     @DeleteMapping("/api/cards/{id}")
     public ResponseEntity<Void> deleteCard(@PathVariable Long id,
                                             @AuthenticationPrincipal Long ownerId) {
