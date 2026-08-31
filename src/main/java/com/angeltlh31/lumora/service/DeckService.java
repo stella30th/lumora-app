@@ -4,7 +4,6 @@ import com.angeltlh31.lumora.dto.deck.DeckRequest;
 import com.angeltlh31.lumora.dto.deck.DeckResponse;
 import com.angeltlh31.lumora.entity.Deck;
 import com.angeltlh31.lumora.entity.User;
-import com.angeltlh31.lumora.exception.ForbiddenException;
 import com.angeltlh31.lumora.exception.ResourceNotFoundException;
 import com.angeltlh31.lumora.repository.DeckRepository;
 import com.angeltlh31.lumora.repository.UserRepository;
@@ -21,6 +20,9 @@ public class DeckService {
 
     private final DeckRepository deckRepository; //DI
     private final UserRepository userRepository;
+    // Ngay 12: verifyOwnership/verifyReadAccess chuyen sang DeckAccessService dung chung -
+    // xem giai thich "rule of three" trong DeckAccessService.java.
+    private final DeckAccessService deckAccessService;
 
     public DeckResponse createDeck(Long ownerId, DeckRequest request) {
         User owner = userRepository.findById(ownerId)
@@ -62,7 +64,7 @@ public class DeckService {
     @Transactional(readOnly = true)
     public DeckResponse getDeckById(Long id, Long requesterId) {
         Deck deck = findDeckOrThrow(id);
-        verifyReadAccess(deck, requesterId);
+        deckAccessService.verifyReadAccess(deck, requesterId);
         return toResponse(deck);
     }
 
@@ -71,7 +73,7 @@ public class DeckService {
     // neu id nay khong phai Deck cua ownerId dang goi.
     public DeckResponse updateDeck(Long id, Long ownerId, DeckRequest request) {
         Deck deck = findDeckOrThrow(id);
-        verifyOwnership(deck, ownerId);
+        deckAccessService.verifyOwnership(deck, ownerId);
 
         deck.setName(request.getName());
         deck.setDescription(request.getDescription());
@@ -82,35 +84,13 @@ public class DeckService {
 
     public void deleteDeck(Long id, Long ownerId) {
         Deck deck = findDeckOrThrow(id);
-        verifyOwnership(deck, ownerId);
+        deckAccessService.verifyOwnership(deck, ownerId);
         deckRepository.delete(deck);
     }
 
     private Deck findDeckOrThrow(Long id) {
         return deckRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay Deck id=" + id));
-    }
-
-    // Tach rieng 1 method dung chung cho ca updateDeck/deleteDeck: so sanh chu so huu THAT
-    // (deck.getOwner().getId(), doc tu database) voi nguoi dang goi (ownerId, lay tu JWT da
-    // verify) - khong khop nghia la dung Deck ton tai that, nhung khong phai cua nguoi nay.
-    private void verifyOwnership(Deck deck, Long ownerId) {
-        if (!deck.getOwner().getId().equals(ownerId)) {
-            throw new ForbiddenException(
-                    "Ban khong co quyen thao tac tren Deck id=" + deck.getId());
-        }
-    }
-
-    // Ngay 10: quyen DOC - khac verifyOwnership (chi chu moi qua duoc, dung cho GHI).
-    // Cho phep khi Deck la public, HOAC nguoi goi la chu. Tach rieng ham nay thay vi sua
-    // verifyOwnership vi 2 ham mang ngu nghia nghiep vu khac nhau (owner-only vs owner-OR-public)
-    // - gop chung se phai them tham so co/khong check public, doc kho hieu hon la tach ro.
-    private void verifyReadAccess(Deck deck, Long requesterId) {
-        boolean isOwner = deck.getOwner().getId().equals(requesterId);
-        if (!deck.isPublic() && !isOwner) {
-            throw new ForbiddenException(
-                    "Ban khong co quyen xem Deck id=" + deck.getId());
-        }
     }
 
     private DeckResponse toResponse(Deck deck) {
