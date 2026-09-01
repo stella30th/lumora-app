@@ -80,7 +80,14 @@ public class CardProgressService {
     // Ngay 12 - trai tim cua thuat toan spaced repetition (ban rut gon nhi phan cua SM-2).
     // Cong thuc goc dung thang chat luong q=0..5; o day chi con 2 nhanh dung/sai tuong duong
     // q=5 va q=0. Xem docs/recap-day12.md de doi chieu voi cong thuc SM-2 nguyen ban.
-    private void applyReview(CardProgress progress, boolean correct) {
+    //
+    // Ngay 13: bo "private" -> chuyen thanh package-private (khong ghi modifier nao ca) DE
+    // CardProgressServiceTest (cung package, khac thu muc src/test) co the goi thang method
+    // nay ma khong can @SpringBootTest hay Mockito - vi day la logic thuan (khong dung DB,
+    // khong dung repository nao trong 5 field cua class). Danh doi: giam encapsulation mot
+    // chut (package khac van khong goi duoc, chi rieng test cung package moi goi duoc) de
+    // doi lay kha nang test nhanh, khong can boot Spring context. Xem docs/recap-day13.md.
+    void applyReview(CardProgress progress, boolean correct) {
         if (correct) {
             progress.setRepetitions(progress.getRepetitions() + 1);
             progress.setIntervalDays(nextInterval(progress));
