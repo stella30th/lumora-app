@@ -31,7 +31,7 @@ public class SecurityConfig {
     // Filter chain ben duoi ghi de lai hanh vi mac dinh do.
     //
     // Buoc 5 (JWT Filter) sua lai placeholder cua ngay 5: gio moi request bat buoc phai co
-    // token hop le, TRU 2 endpoint permitAll ben duoi.
+    // token hop le, TRU cac endpoint permitAll ben duoi.
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -42,13 +42,17 @@ public class SecurityConfig {
                 // Dung tinh than cua JWT - moi request tu mang du thong tin xac thuc trong token,
                 // server khong nho "ai vua dang nhap" giua cac request.
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                // Sieu lai placeholder permitAll() cua ngay 5: chi 2 endpoint nay khong can token
-                // (vi chinh no la noi TAO ra token / tao ra user) - moi request khac deu phai
-                // duoc JwtAuthenticationFilter xac thuc thanh cong truoc do.
+                // Sieu lai placeholder permitAll() cua ngay 5: chi cac endpoint nay khong can
+                // access token - vi chinh no la noi TAO/DOI moi ra token, hoac la Swagger UI.
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/users/register",
                                 "/api/users/login",
+                                // Ngay 15: /refresh KHONG the doi hoi access token hop le - endpoint
+                                // nay ton tai CHINH VI access token da het han. Xac thuc o day dua
+                                // vao refreshToken trong body (RefreshTokenService), khong dua vao
+                                // JwtAuthenticationFilter/SecurityFilterChain nhu cac route khac.
+                                "/api/users/refresh",
                                 // Swagger UI + OpenAPI spec: phai permitAll, khong thi chinh
                                 // JwtAuthenticationFilter/authenticated() ben duoi se chan luon
                                 // trang Swagger (403/401) truoc khi ban kip nhap token vao.

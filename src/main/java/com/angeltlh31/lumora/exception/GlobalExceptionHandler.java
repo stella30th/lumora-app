@@ -43,6 +43,18 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
     }
 
+    // Ngay 15: cung tra 401 nhu InvalidCredentialException (ca 2 deu la "chua xac thuc duoc"),
+    // nhung tach class rieng vi ngu canh khac nhau - loi nay xay ra o /refresh (token het
+    // han/bi thu hoi/khong ton tai), khong phai o /login (sai email/password).
+    @ExceptionHandler(InvalidRefreshTokenException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidRefreshToken(InvalidRefreshTokenException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.UNAUTHORIZED.value());
+        body.put("message", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
+    }
+
     // Ngay 9 - Authorization: khac 401 (handleInvalidCredential/authenticationEntryPoint o
     // SecurityConfig - "chua biet anh la ai") - day la 403 ("biet anh la ai roi, nhung anh
     // khong co quyen voi cai NAY"). Nem ra tu Service SAU KHI da xac dinh duoc chu so huu that
