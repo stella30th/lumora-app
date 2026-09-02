@@ -113,6 +113,27 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Ngay 16: Testcontainers - cho phep test khoi 1 container Docker THAT (Postgres)
+             chi song trong luc chay test, thay vi mock/H2. Ca 3 dependency duoi day deu KHONG
+             ghi <version> - spring-boot-starter-parent (dependencyManagement cua no) da quan ly
+             san version tuong thich cho ca 3, giong het cach spring-boot-starter-data-jpa o tren
+             khong can ghi version. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- testRuntimeOnly -->
         <dependency>
             <groupId>org.junit.platform</groupId>
@@ -126,6 +147,27 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+
+            <!-- Ngay 16: maven-failsafe-plugin - "anh em" cua maven-surefire-plugin (plugin
+                 chay `./mvnw test`, quet *Test.java), nhung quet rieng file *IT.java va chay o
+                 goal `integration-test` + `verify` (2 buoc SAU `test` trong vong doi Maven).
+                 Khong ghi <version> - spring-boot-starter-parent da quan ly san (giong cach
+                 khong can ghi version cho cac starter dependency o tren).
+                 Ket qua: `./mvnw test` KHONG dung Docker, chi chay unit test (Ngay 13-15), rat
+                 nhanh; `./mvnw verify` chay CA `test` LAN cac file *IT.java (Ngay 16 tro di),
+                 can Docker dang mo, cham hon vi phai khoi container that. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
