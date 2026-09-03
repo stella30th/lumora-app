@@ -96,10 +96,23 @@ export async function apiClient<T = unknown>(
     let errorMessage = `HTTP error ${res.status}`;
     try {
       const errorBody = await res.json();
-      errorMessage =
-        errorBody.message ||
-        errorBody.error ||
-        (Array.isArray(errorBody.errors) ? errorBody.errors.join(", ") : errorMessage);
+      // GlobalExceptionHandler on the backend replies in two different shapes:
+      //  - most exceptions (NotFound/Forbidden/Duplicate/...): { message: "..." }
+      //  - @Valid field validation failures (MethodArgumentNotValidException):
+      //    { errors: { fieldName: "message", ... } } -- an OBJECT keyed by field,
+      //    not an array. Object.values() flattens it into readable text.
+      if (typeof errorBody.message === "string") {
+        errorMessage = errorBody.message;
+      } else if (typeof errorBody.error === "string") {
+        errorMessage = errorBody.error;
+      } else if (errorBody.errors && typeof errorBody.errors === "object") {
+        const fieldMessages = Array.isArray(errorBody.errors)
+          ? errorBody.errors
+          : Object.values(errorBody.errors);
+        if (fieldMessages.length > 0) {
+          errorMessage = fieldMessages.join(", ");
+        }
+      }
     } catch {
       // Body is not JSON
     }
