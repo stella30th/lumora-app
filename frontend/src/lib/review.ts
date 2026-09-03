@@ -1,6 +1,3 @@
-// Thin wrapper functions around apiClient for the review-session endpoints
-// (backend/.../controller/CardProgressController.java). Same reasoning as
-// lib/decks.ts and lib/cards.ts.
 import { apiClient } from "./api-client";
 import { DueCard, CardProgressResult } from "@/types/card";
 

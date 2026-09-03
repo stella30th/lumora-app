@@ -1,10 +1,5 @@
 "use client";
 
-// Generic modal chrome: dark overlay + surface box + title + close button.
-// DeckFormModal, CardFormModal and ConfirmDialog all render their own form/content
-// as `children` inside this -- keeps the "how a modal looks/closes" logic in one
-// place instead of copy-pasted into every modal (spec 2.3 asks for exactly this:
-// overlay opacity, surface box, border, 12px radius, close by X or outside click).
 import React, { useEffect } from "react";
 import { X } from "lucide-react";
 
@@ -23,7 +18,6 @@ export function Modal({
   children,
   maxWidthClassName = "max-w-[440px]",
 }: ModalProps) {
-  // Close on Escape while the modal is open.
   useEffect(() => {
     if (!open) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -39,8 +33,6 @@ export function Modal({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-lumora-bg/70 p-4"
       onMouseDown={(e) => {
-        // Only close when the mousedown started on the overlay itself, not
-        // when it started inside the box and the mouseup happened to land here.
         if (e.target === e.currentTarget) onClose();
       }}
     >

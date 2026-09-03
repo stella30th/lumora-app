@@ -46,10 +46,6 @@ export default function StudySessionPage() {
     enabled: !!deckId,
   });
 
-  // Snapshot the queue once it arrives -- answering a card changes the
-  // *server's* due-list for this deck (it may drop out or its status may
-  // change), but the in-progress session should keep working through the
-  // fixed list it started with instead of re-fetching mid-session.
   useEffect(() => {
     if (dueCards && queue === null) setQueue(dueCards);
   }, [dueCards, queue]);

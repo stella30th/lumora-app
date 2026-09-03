@@ -16,7 +16,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>("dark");
 
   useEffect(() => {
-    // Read from localStorage, default to 'dark' per design guidelines
     const savedTheme = localStorage.getItem("lumora-theme") as Theme | null;
     const initialTheme = savedTheme === "light" ? "light" : "dark";
     setThemeState(initialTheme);

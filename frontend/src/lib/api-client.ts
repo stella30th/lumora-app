@@ -8,7 +8,6 @@ interface RequestOptions extends RequestInit {
   skipAuth?: boolean;
 }
 
-// Lock to prevent multiple simultaneous refresh calls which would invalidate rotation
 let isRefreshing = false;
 let refreshPromise: Promise<string | null> | null = null;
 
@@ -80,7 +79,6 @@ export async function apiClient<T = unknown>(
     headers: requestHeaders,
   });
 
-  // Handle 401 Unauthorized by attempting token refresh
   if (res.status === 401 && !skipAuth && !endpoint.includes("/api/users/refresh")) {
     const newToken = await refreshAccessToken();
     if (newToken) {
@@ -96,11 +94,6 @@ export async function apiClient<T = unknown>(
     let errorMessage = `HTTP error ${res.status}`;
     try {
       const errorBody = await res.json();
-      // GlobalExceptionHandler on the backend replies in two different shapes:
-      //  - most exceptions (NotFound/Forbidden/Duplicate/...): { message: "..." }
-      //  - @Valid field validation failures (MethodArgumentNotValidException):
-      //    { errors: { fieldName: "message", ... } } -- an OBJECT keyed by field,
-      //    not an array. Object.values() flattens it into readable text.
       if (typeof errorBody.message === "string") {
         errorMessage = errorBody.message;
       } else if (typeof errorBody.error === "string") {
@@ -114,7 +107,6 @@ export async function apiClient<T = unknown>(
         }
       }
     } catch {
-      // Body is not JSON
     }
     const err = new Error(errorMessage) as Error & { status?: number };
     err.status = res.status;
@@ -126,4 +118,13 @@ export async function apiClient<T = unknown>(
   }
 
   return res.json() as Promise<T>;
+}
+
+export async function logoutAndClear(): Promise<void> {
+  try {
+    await apiClient("/api/users/logout", { method: "POST" });
+  } catch {
+  } finally {
+    clearAuth();
+  }
 }

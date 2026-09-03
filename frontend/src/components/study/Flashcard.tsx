@@ -7,8 +7,6 @@ interface FlashcardProps {
   onFlip: () => void;
 }
 
-// Stacked-deck look from the mockup: two faint blank layers peeking out behind
-// the active card, front/back swap on click (or Space, wired in the page).
 export function Flashcard({ term, definition, flipped, onFlip }: FlashcardProps) {
   return (
     <div className="relative w-full max-w-xl">

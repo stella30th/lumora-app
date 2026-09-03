@@ -5,9 +5,6 @@ interface ReviewButtonsProps {
   disabled?: boolean;
 }
 
-// Only 2 outcomes, not the mockup's 4 (Again/Hard/Good/Easy) -- the backend's
-// review endpoint takes a single boolean. Kept neutral (no red/green), same as
-// the rest of the app's no-color-for-right/wrong rule. See day3-notes.md.
 export function ReviewButtons({ onAnswer, disabled }: ReviewButtonsProps) {
   return (
     <div className="grid grid-cols-2 gap-3 w-full max-w-xl">

@@ -1,6 +1,3 @@
-// Small relative-time helper -- no need for a date library (date-fns/dayjs) for
-// one function like this. Used to turn a deck's createdAt (or any ISO timestamp)
-// into "2 hours ago" style text.
 export function formatRelativeTime(isoDate: string): string {
   const date = new Date(isoDate);
   const diffSec = Math.floor((Date.now() - date.getTime()) / 1000);

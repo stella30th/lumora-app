@@ -13,9 +13,6 @@ import { isAuthenticated } from "@/lib/auth";
 import * as decksApi from "@/lib/decks";
 import { Deck } from "@/types/deck";
 
-// Not in the original Day 3 spec (which only defines /study/[deckId]) -- added
-// so the Sidebar's "Study" link has somewhere to go instead of staying a
-// placeholder forever. See frontend/docs/day3-notes.md.
 export default function StudyDeckPickerPage() {
   const router = useRouter();
 

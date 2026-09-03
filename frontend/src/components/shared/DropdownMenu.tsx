@@ -1,8 +1,5 @@
 "use client";
 
-// Small "kebab" dropdown menu (the vertical ⋮ button that opens Edit/Delete).
-// Shared between DeckCard (deck options) and CardRow (card options) so the
-// open/close-on-outside-click/Escape logic exists in exactly one place.
 import React, { useEffect, useRef, useState } from "react";
 import { MoreVertical } from "lucide-react";
 

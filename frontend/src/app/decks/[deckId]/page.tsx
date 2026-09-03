@@ -63,7 +63,7 @@ export default function DeckDetailPage() {
   const handleEditDeckSubmit = async (input: DeckFormInput) => {
     await decksApi.updateDeck(deckId, input);
     await queryClient.invalidateQueries({ queryKey: ["deck", deckId] });
-    await queryClient.invalidateQueries({ queryKey: ["decks"] }); // keep /decks list in sync
+    await queryClient.invalidateQueries({ queryKey: ["decks"] });
     setIsEditDeckOpen(false);
   };
 

@@ -9,9 +9,6 @@ interface EmptyStateProps {
   className?: string;
 }
 
-// Shared "nothing here yet" block -- used for an empty deck list, an empty card
-// list within a deck, and (from Day 3/4 onward) anywhere else that needs the
-// same faded-icon + message + optional action pattern instead of a bare page.
 export function EmptyState({
   icon: Icon = Folder,
   message,

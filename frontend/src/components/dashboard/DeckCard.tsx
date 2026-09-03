@@ -9,12 +9,7 @@ import { DropdownMenu } from "@/components/shared/DropdownMenu";
 
 interface DeckCardProps {
   deck: Deck;
-  // The Deck API response has no card count (see types/deck.ts) -- the caller
-  // fetches it separately and passes it in. undefined = still loading.
   cardCount?: number;
-  // Only the /decks page passes these -- when they're omitted (Dashboard's
-  // read-only preview) the kebab menu simply doesn't render, instead of
-  // showing a button that does nothing.
   onEdit?: () => void;
   onDelete?: () => void;
 }

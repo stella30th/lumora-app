@@ -1,8 +1,5 @@
 "use client";
 
-// Confirmation modal for destructive actions (deleting a deck or a card).
-// The spec explicitly asks NOT to use the browser's native window.confirm(),
-// so this reuses Modal for the same look/behavior as the other modals.
 import React from "react";
 import { Modal } from "./Modal";
 

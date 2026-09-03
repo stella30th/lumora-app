@@ -13,7 +13,6 @@ export function Topbar({ className = "" }: TopbarProps) {
     <header
       className={`h-16 border-b border-lumora-border bg-lumora-bg px-8 flex items-center justify-between sticky top-0 z-10 ${className}`}
     >
-      {/* Search Input (Static for Day 1) */}
       <div className="relative w-72 md:w-80">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-lumora-secondary stroke-[1.8]" />
         <input
@@ -24,7 +23,6 @@ export function Topbar({ className = "" }: TopbarProps) {
         />
       </div>
 
-      {/* Right actions: Notifications & Theme Toggle */}
       <div className="flex items-center gap-3">
         <button
           type="button"

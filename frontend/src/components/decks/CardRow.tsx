@@ -1,8 +1,5 @@
 "use client";
 
-// One row in a deck's card list (spec 2.2: "front/back truncated to 1 line,
-// edit/delete per card"). A row-list rather than an HTML <table> so it can
-// reuse the same surface/border/hover tokens as every other list in the app.
 import React from "react";
 import { Card } from "@/types/card";
 import { DropdownMenu } from "@/components/shared/DropdownMenu";

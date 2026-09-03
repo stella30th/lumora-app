@@ -8,15 +8,11 @@ import { Card, CardFormInput } from "@/types/card";
 
 interface CardFormModalProps {
   open: boolean;
-  card?: Card | null; // present = edit mode, absent/null = create mode
+  card?: Card | null;
   onClose: () => void;
   onSubmit: (input: CardFormInput) => Promise<void>;
 }
 
-// Only term (front) + definition (back) -- the backend Card entity
-// (backend/.../entity/Card.java) has no pronunciation/example fields, so per
-// the spec this form does not invent any. Add fields here only after adding
-// them to the backend Card entity/DTO first.
 export function CardFormModal({ open, card, onClose, onSubmit }: CardFormModalProps) {
   const isEditMode = !!card;
   const [term, setTerm] = useState("");

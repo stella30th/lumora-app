@@ -1,5 +1,3 @@
-// Thin wrapper functions around apiClient for the Card endpoints
-// (backend/.../controller/CardController.java). Same reasoning as lib/decks.ts.
 import { apiClient } from "./api-client";
 import { Card, CardFormInput } from "@/types/card";
 

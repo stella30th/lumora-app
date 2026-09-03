@@ -8,7 +8,7 @@ import { Deck, DeckFormInput } from "@/types/deck";
 
 interface DeckFormModalProps {
   open: boolean;
-  deck?: Deck | null; // present = edit mode, absent/null = create mode
+  deck?: Deck | null;
   onClose: () => void;
   onSubmit: (input: DeckFormInput) => Promise<void>;
 }
@@ -20,9 +20,6 @@ export function DeckFormModal({ open, deck, onClose, onSubmit }: DeckFormModalPr
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // Re-seed the form every time the modal opens: prefilled from `deck` in edit
-  // mode, blank in create mode. Runs on `open` (not just `deck`) so reopening
-  // the same edit target after a cancel also resets any half-typed changes.
   useEffect(() => {
     if (open) {
       setName(deck?.name ?? "");
@@ -45,8 +42,6 @@ export function DeckFormModal({ open, deck, onClose, onSubmit }: DeckFormModalPr
       await onSubmit({
         name: name.trim(),
         description: description.trim() || undefined,
-        // Day 2 intentionally has no UI for making a deck public -- every deck
-        // created/edited here stays private.
         isPublic: deck?.isPublic ?? false,
       });
     } catch (err: unknown) {

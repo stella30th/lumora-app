@@ -17,9 +17,6 @@ import * as cardsApi from "@/lib/cards";
 import { Deck, DeckFormInput } from "@/types/deck";
 import { Card } from "@/types/card";
 
-// Wraps DeckCard with its own card-count fetch. One useQuery per deck instead
-// of one big fan-out request: each row caches/refetches independently, and it
-// keeps DeckCard itself free of any fetching concerns (it just renders props).
 function DeckGridItem({
   deck,
   onEdit,
@@ -135,11 +132,6 @@ export default function DecksPage() {
           )}
 
           {!isLoading && decks && decks.length > 0 && (
-            // Backend GET /api/decks returns the full list with no pagination
-            // params (see DeckController.getMyDecks) -- so Day 2 renders the
-            // whole list at once instead of faking client-side pagination.
-            // Real pagination/infinite scroll needs offset+limit support added
-            // to that endpoint first.
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[14px]">
               {decks.map((deck) => (
                 <DeckGridItem
