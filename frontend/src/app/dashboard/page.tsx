@@ -3,14 +3,19 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Layers, CreditCard, Clock, Flame, ArrowRight } from "lucide-react";
+import { useQueries, useQuery } from "@tanstack/react-query";
+import { Layers, CreditCard, Clock, Flame, ArrowRight, Plus } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { StatTile } from "@/components/dashboard/StatTile";
 import { DeckCard } from "@/components/dashboard/DeckCard";
 import { StudyNowCard } from "@/components/dashboard/StudyNowCard";
+import { ErrorBanner } from "@/components/shared/ErrorBanner";
 import { getUser, isAuthenticated } from "@/lib/auth";
-import { DeckSummary, DashboardStats } from "@/types/deck";
+import * as decksApi from "@/lib/decks";
+import * as cardsApi from "@/lib/cards";
+import { Deck, DashboardStats } from "@/types/deck";
+import { Card } from "@/types/card";
 
 const SARCASM_GREETINGS = [
   (name: string, _due: number, streak: number) =>
@@ -30,66 +35,70 @@ export default function DashboardPage() {
   const [userName, setUserName] = useState("there");
   const [greeting, setGreeting] = useState("");
 
-  // TODO: Wire up the real API on Day 2 once the deck/card/review endpoints are ready
-  const [stats] = useState<DashboardStats>({
-    totalDecks: 4,
-    totalCards: 142,
-    cardsDue: 18,
-    dayStreak: 5,
-  });
-
-  // TODO: Wire up the real deck list API on Day 2
-  const [recentDecks] = useState<DeckSummary[]>([
-    {
-      id: 1,
-      title: "3000 Common Oxford Words",
-      description: "The most essential everyday vocabulary for daily English communication.",
-      totalCards: 60,
-      dueCards: 8,
-      updatedAt: "2 hours ago",
-    },
-    {
-      id: 2,
-      title: "Software Engineering Terms",
-      description: "System architecture terminology, design patterns, and databases.",
-      totalCards: 45,
-      dueCards: 6,
-      updatedAt: "Yesterday",
-    },
-    {
-      id: 3,
-      title: "Common Idioms & Phrasal Verbs",
-      description: "Natural English idioms for working professionals.",
-      totalCards: 25,
-      dueCards: 4,
-      updatedAt: "3 days ago",
-    },
-    {
-      id: 4,
-      title: "IELTS Band 7.5+ Vocabulary",
-      description: "Advanced academic vocabulary for Writing Task 2.",
-      totalCards: 12,
-      dueCards: 0,
-      updatedAt: "5 days ago",
-    },
-  ]);
-
   useEffect(() => {
     if (!isAuthenticated()) {
       router.replace("/login");
       return;
     }
+    setUserName(getUser()?.username || "there");
+  }, [router]);
 
-    const user = getUser();
-    const currentName = user?.username || "there";
-    setUserName(currentName);
+  // --- Real data as of Day 2 -------------------------------------------------
+  const {
+    data: decks,
+    isLoading: areDecksLoading,
+    isError: isDecksError,
+    error: decksError,
+  } = useQuery<Deck[], Error>({
+    queryKey: ["decks"],
+    queryFn: decksApi.getDecks,
+  });
 
-    // Pick random sarcasm greeting
+  // One card-count query per deck, all fired in parallel (React Query dedupes/
+  // caches each by its queryKey, so this is the same cache entries DeckCard
+  // uses on the /decks page too -- no wasted requests when navigating between
+  // the two pages within the cache's staleTime).
+  const cardCountQueries = useQueries({
+    queries: (decks ?? []).map((deck) => ({
+      queryKey: ["cards", deck.id],
+      queryFn: () => cardsApi.getCardsByDeck(deck.id),
+      enabled: !!decks,
+    })),
+  });
+
+  const cardCountByDeckId = new Map<number, number | undefined>();
+  (decks ?? []).forEach((deck, i) => {
+    cardCountByDeckId.set(deck.id, (cardCountQueries[i]?.data as Card[] | undefined)?.length);
+  });
+
+  const totalCards = cardCountQueries.reduce(
+    (sum, q) => sum + ((q.data as Card[] | undefined)?.length ?? 0),
+    0
+  );
+
+  const recentDecks = [...(decks ?? [])]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 4);
+
+  // cardsDue/dayStreak need CardProgressService's getDueCards() and a streak
+  // calculation -- neither is wired into the frontend yet, that's Day 3 (Study
+  // Session + Progress). Keeping these as clearly-marked placeholders rather
+  // than faking a number that would be wrong.
+  const stats: DashboardStats = {
+    totalDecks: decks?.length ?? 0,
+    totalCards,
+    cardsDue: 18, // TODO (Day 3): GET .../due-cards or similar, once that endpoint exists
+    dayStreak: 5, // TODO (Day 3): derive from CardProgress review history
+  };
+
+  useEffect(() => {
+    if (!userName) return;
     const randomIndex = Math.floor(Math.random() * SARCASM_GREETINGS.length);
-    setGreeting(
-      SARCASM_GREETINGS[randomIndex](currentName, stats.cardsDue, stats.dayStreak)
-    );
-  }, [router, stats.cardsDue, stats.dayStreak]);
+    setGreeting(SARCASM_GREETINGS[randomIndex](userName, stats.cardsDue, stats.dayStreak));
+    // Only re-roll the greeting when the user's name resolves, not on every
+    // stats re-render (cardsDue/dayStreak are still placeholders anyway).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userName]);
 
   return (
     <div className="min-h-screen flex bg-lumora-bg text-lumora-primary">
@@ -111,18 +120,22 @@ export default function DashboardPage() {
             </p>
           </div>
 
+          {isDecksError && (
+            <ErrorBanner message={decksError?.message || "Could not load your decks."} />
+          )}
+
           {/* 4 Stat Tiles */}
           <section aria-label="Overview stats">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[14px]">
               <StatTile
                 label="Total Decks"
-                value={stats.totalDecks}
+                value={areDecksLoading ? "…" : stats.totalDecks}
                 subtext="decks"
                 icon={Layers}
               />
               <StatTile
                 label="Total Cards"
-                value={stats.totalCards}
+                value={areDecksLoading ? "…" : stats.totalCards}
                 subtext="cards"
                 icon={CreditCard}
               />
@@ -141,14 +154,16 @@ export default function DashboardPage() {
             </div>
           </section>
 
-          {/* Study Now Banner */}
-          <section aria-label="Continue studying">
-            <StudyNowCard
-              deckId={recentDecks[0]?.id || 1}
-              deckTitle={recentDecks[0]?.title || "3000 Common Oxford Words"}
-              dueCards={stats.cardsDue}
-            />
-          </section>
+          {/* Study Now Banner -- only makes sense once the user has at least 1 deck */}
+          {recentDecks.length > 0 && (
+            <section aria-label="Continue studying">
+              <StudyNowCard
+                deckId={recentDecks[0].id}
+                deckTitle={recentDecks[0].name}
+                dueCards={stats.cardsDue}
+              />
+            </section>
+          )}
 
           {/* Your Decks Section */}
           <section aria-label="Recent decks" className="flex flex-col gap-4">
@@ -171,11 +186,27 @@ export default function DashboardPage() {
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[14px]">
-              {recentDecks.map((deck) => (
-                <DeckCard key={deck.id} deck={deck} />
-              ))}
-            </div>
+            {areDecksLoading && (
+              <p className="text-body-default text-lumora-secondary">Loading decks...</p>
+            )}
+
+            {!areDecksLoading && recentDecks.length === 0 && !isDecksError && (
+              <Link
+                href="/decks"
+                className="inline-flex items-center gap-2 self-start px-4 py-2 rounded-btn bg-lumora-btn text-lumora-btn-text text-body-default font-semibold hover:opacity-90 transition-opacity"
+              >
+                <Plus className="w-4 h-4 stroke-[2]" />
+                <span>Create your first deck</span>
+              </Link>
+            )}
+
+            {recentDecks.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[14px]">
+                {recentDecks.map((deck) => (
+                  <DeckCard key={deck.id} deck={deck} cardCount={cardCountByDeckId.get(deck.id)} />
+                ))}
+              </div>
+            )}
           </section>
         </main>
       </div>
