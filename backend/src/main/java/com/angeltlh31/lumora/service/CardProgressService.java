@@ -46,7 +46,7 @@ public class CardProgressService {
     // On mot Deck public cua nguoi khac van hop le, chi khong duoc SUA noi dung Card cua ho.
     public CardProgressResponse submitReview(Long cardId, Long userId, boolean correct) {
         Card card = cardRepository.findById(cardId)
-                .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay Card id=" + cardId));
+                .orElseThrow(() -> new ResourceNotFoundException("Card not found with id=" + cardId));
         deckAccessService.verifyReadAccess(card.getDeck(), userId);
 
         CardProgress progress = cardProgressRepository.findByUserIdAndCardId(userId, cardId)
@@ -59,7 +59,7 @@ public class CardProgressService {
     @Transactional(readOnly = true)
     public List<DueCardResponse> getDueCards(Long deckId, Long requesterId) {
         Deck deck = deckRepository.findById(deckId)
-                .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay Deck id=" + deckId));
+                .orElseThrow(() -> new ResourceNotFoundException("Deck not found with id=" + deckId));
         deckAccessService.verifyReadAccess(deck, requesterId);
 
         List<Card> dueCards = cardRepository.findDueCards(deckId, requesterId, LocalDate.now());
@@ -118,7 +118,7 @@ public class CardProgressService {
 
     private CardProgress createNewProgress(Long userId, Card card) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay User id=" + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id=" + userId));
         // easeFactor/intervalDays/repetitions/status da co @Builder.Default trong entity
         // (2.5/0/0/NEW) - nextReviewDate se duoc applyReview() set NGAY SAU DAY, truoc khi
         // save(), nen khong vi pham rang buoc nullable=false cua cot next_review_date.

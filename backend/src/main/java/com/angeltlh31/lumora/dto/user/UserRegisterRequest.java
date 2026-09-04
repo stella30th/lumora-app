@@ -10,15 +10,15 @@ import lombok.Setter;
 @Setter
 public class UserRegisterRequest {
 
-    @NotBlank(message = "Username khong duoc de trong")
+    @NotBlank(message = "Username is required")
     @Size(max = 50)
     private String username;
 
-    @NotBlank(message = "Email khong duoc de trong")
-    @Email(message = "Email khong dung dinh dang")
+    @NotBlank(message = "Email is required")
+    @Email(message = "Invalid email format")
     private String email;
 
-    @NotBlank(message = "Password khong duoc de trong")
-    @Size(min = 6, message = "Password toi thieu 6 ky tu")
+    @NotBlank(message = "Password is required")
+    @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
 }

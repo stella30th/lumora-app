@@ -9,11 +9,11 @@ import lombok.Setter;
 @Setter
 public class CardRequest {
 
-    @NotBlank(message = "Term khong duoc de trong")
+    @NotBlank(message = "Term is required")
     @Size(max = 255)
     private String term;
 
-    @NotBlank(message = "Definition khong duoc de trong")
+    @NotBlank(message = "Definition is required")
     @Size(max = 1000)
     private String definition;
 }

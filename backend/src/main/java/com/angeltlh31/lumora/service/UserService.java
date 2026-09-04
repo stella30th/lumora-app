@@ -31,10 +31,10 @@ public class UserService {
 
     public UserResponse registerUser(UserRegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new DuplicateResourceException("Username da ton tai: " + request.getUsername());
+            throw new DuplicateResourceException("Username already exists: " + request.getUsername());
         }
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new DuplicateResourceException("Email da ton tai: " + request.getEmail());
+            throw new DuplicateResourceException("Email already exists: " + request.getEmail());
         }
 
         User user = User.builder()
@@ -55,12 +55,12 @@ public class UserService {
     public LoginResponse login(LoginRequest request) {
         // Co tinh dung CUNG 1 message cho ca 2 nhanh loi (xem InvalidCredentialException).
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new InvalidCredentialException("Email hoac password khong dung"));
+                .orElseThrow(() -> new InvalidCredentialException("Invalid email or password"));
 
         // matches(raw, hash): hash lai raw roi so voi hash da luu - KHONG giai ma hash de so sanh truc tiep
         // (khong the, BCrypt la ham bam 1 chieu - xem docs/recap-day5.md).
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new InvalidCredentialException("Email hoac password khong dung");
+            throw new InvalidCredentialException("Invalid email or password");
         }
 
         return issueTokenPair(user);
@@ -100,7 +100,7 @@ public class UserService {
     @Transactional(readOnly = true)
     public UserResponse getUserById(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay User id=" + id));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id=" + id));
         return toResponse(user);
     }
 

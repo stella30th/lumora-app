@@ -29,7 +29,7 @@ public class CardService {
     // Deck moi biet duoc co cho phep tao Card trong do khong.
     public CardResponse createCard(Long deckId, Long ownerId, CardRequest request) {
         Deck deck = deckRepository.findById(deckId)
-                .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay Deck id=" + deckId));
+                .orElseThrow(() -> new ResourceNotFoundException("Deck not found with id=" + deckId));
         deckAccessService.verifyOwnership(deck, ownerId);
 
         Card card = Card.builder()
@@ -47,7 +47,7 @@ public class CardService {
     @Transactional(readOnly = true)
     public List<CardResponse> getCardsByDeck(Long deckId, Long requesterId) {
         Deck deck = deckRepository.findById(deckId)
-                .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay Deck id=" + deckId));
+                .orElseThrow(() -> new ResourceNotFoundException("Deck not found with id=" + deckId));
         deckAccessService.verifyReadAccess(deck, requesterId);
 
         return cardRepository.findByDeckId(deckId)
@@ -81,7 +81,7 @@ public class CardService {
 
     private Card findCardOrThrow(Long id) {
         return cardRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay Card id=" + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Card not found with id=" + id));
     }
 
     private CardResponse toResponse(Card card) {

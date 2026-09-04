@@ -139,7 +139,7 @@ public class SecurityConfig {
                     response.setStatus(401);
                     response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                     response.getWriter().write(
-                            "{\"status\":401,\"message\":\"Thieu token hoac token khong hop le\"}");
+                            "{\"status\":401,\"message\":\"Missing or invalid token\"}");
                 }));
 
         return http.build();

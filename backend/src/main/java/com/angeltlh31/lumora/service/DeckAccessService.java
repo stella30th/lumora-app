@@ -20,7 +20,7 @@ public class DeckAccessService {
     public void verifyOwnership(Deck deck, Long userId) {
         if (!deck.getOwner().getId().equals(userId)) {
             throw new ForbiddenException(
-                    "Ban khong co quyen thao tac tren Deck id=" + deck.getId());
+                    "You do not have permission to modify deck id=" + deck.getId());
         }
     }
 
@@ -31,7 +31,7 @@ public class DeckAccessService {
         boolean isOwner = deck.getOwner().getId().equals(requesterId);
         if (!deck.isPublic() && !isOwner) {
             throw new ForbiddenException(
-                    "Ban khong co quyen xem Deck id=" + deck.getId());
+                    "You do not have permission to view deck id=" + deck.getId());
         }
     }
 }

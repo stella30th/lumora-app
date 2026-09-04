@@ -26,7 +26,7 @@ public class DeckService {
 
     public DeckResponse createDeck(Long ownerId, DeckRequest request) {
         User owner = userRepository.findById(ownerId)
-                .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay User id=" + ownerId));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id=" + ownerId));
 
         Deck deck = Deck.builder()
                 .name(request.getName())
@@ -90,7 +90,7 @@ public class DeckService {
 
     private Deck findDeckOrThrow(Long id) {
         return deckRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Khong tim thay Deck id=" + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Deck not found with id=" + id));
     }
 
     private DeckResponse toResponse(Deck deck) {

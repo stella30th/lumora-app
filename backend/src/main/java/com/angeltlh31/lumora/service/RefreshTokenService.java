@@ -69,18 +69,18 @@ public class RefreshTokenService {
     public RefreshToken verifyAndGet(String token) {
         RefreshToken refreshToken = refreshTokenRepository.findByToken(token)
                 .orElseThrow(() -> new InvalidRefreshTokenException(
-                        "Refresh token khong hop le"));
+                        "Invalid refresh token"));
 
         if (refreshToken.isRevoked()) {
             // Dau hieu dang ngo: 1 token DA bi revoke (da dung de refresh 1 lan, hoac da
             // logout) ma van co ai do dem di dung lai - trong he thong that, day la luc nen
             // canh bao/ghi log rieng (nghi ngo token bi danh cap) - xem cau hoi tu kiem tra 4.
             throw new InvalidRefreshTokenException(
-                    "Refresh token da bi thu hoi - vui long dang nhap lai");
+                    "Refresh token has been revoked - please login again");
         }
         if (refreshToken.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new InvalidRefreshTokenException(
-                    "Refresh token da het han - vui long dang nhap lai");
+                    "Refresh token has expired - please login again");
         }
         return refreshToken;
     }

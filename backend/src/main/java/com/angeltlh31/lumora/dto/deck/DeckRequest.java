@@ -10,7 +10,7 @@ import lombok.Setter;
 @Setter
 public class DeckRequest {
 
-    @NotBlank(message = "Ten deck khong duoc de trong")
+    @NotBlank(message = "Deck name is required")
     @Size(max = 100)
     private String name;
 
