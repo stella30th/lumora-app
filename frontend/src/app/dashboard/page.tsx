@@ -14,8 +14,9 @@ import { ErrorBanner } from "@/components/shared/ErrorBanner";
 import { getUser, isAuthenticated } from "@/lib/auth";
 import * as decksApi from "@/lib/decks";
 import * as cardsApi from "@/lib/cards";
+import * as reviewApi from "@/lib/review";
 import { Deck, DashboardStats } from "@/types/deck";
-import { Card } from "@/types/card";
+import { Card, DueCard } from "@/types/card";
 
 const SARCASM_GREETINGS = [
   (name: string, _due: number, streak: number) =>
@@ -43,7 +44,6 @@ export default function DashboardPage() {
     setUserName(getUser()?.username || "there");
   }, [router]);
 
-  // --- Real data as of Day 2 -------------------------------------------------
   const {
     data: decks,
     isLoading: areDecksLoading,
@@ -54,14 +54,18 @@ export default function DashboardPage() {
     queryFn: decksApi.getDecks,
   });
 
-  // One card-count query per deck, all fired in parallel (React Query dedupes/
-  // caches each by its queryKey, so this is the same cache entries DeckCard
-  // uses on the /decks page too -- no wasted requests when navigating between
-  // the two pages within the cache's staleTime).
   const cardCountQueries = useQueries({
     queries: (decks ?? []).map((deck) => ({
       queryKey: ["cards", deck.id],
       queryFn: () => cardsApi.getCardsByDeck(deck.id),
+      enabled: !!decks,
+    })),
+  });
+
+  const dueQueries = useQueries({
+    queries: (decks ?? []).map((deck) => ({
+      queryKey: ["review-queue", deck.id],
+      queryFn: () => reviewApi.getDueCards(deck.id),
       enabled: !!decks,
     })),
   });
@@ -75,42 +79,38 @@ export default function DashboardPage() {
     (sum, q) => sum + ((q.data as Card[] | undefined)?.length ?? 0),
     0
   );
+  const totalDue = dueQueries.reduce(
+    (sum, q) => sum + ((q.data as DueCard[] | undefined)?.length ?? 0),
+    0
+  );
+  const isDueLoading = areDecksLoading || dueQueries.some((q) => q.isLoading);
 
   const recentDecks = [...(decks ?? [])]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 4);
 
-  // cardsDue/dayStreak need CardProgressService's getDueCards() and a streak
-  // calculation -- neither is wired into the frontend yet, that's Day 3 (Study
-  // Session + Progress). Keeping these as clearly-marked placeholders rather
-  // than faking a number that would be wrong.
   const stats: DashboardStats = {
     totalDecks: decks?.length ?? 0,
     totalCards,
-    cardsDue: 18, // TODO (Day 3): GET .../due-cards or similar, once that endpoint exists
-    dayStreak: 5, // TODO (Day 3): derive from CardProgress review history
+    cardsDue: totalDue,
+    dayStreak: 5,
   };
 
   useEffect(() => {
     if (!userName) return;
     const randomIndex = Math.floor(Math.random() * SARCASM_GREETINGS.length);
     setGreeting(SARCASM_GREETINGS[randomIndex](userName, stats.cardsDue, stats.dayStreak));
-    // Only re-roll the greeting when the user's name resolves, not on every
-    // stats re-render (cardsDue/dayStreak are still placeholders anyway).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userName]);
 
   return (
     <div className="min-h-screen flex bg-lumora-bg text-lumora-primary">
-      {/* Sidebar 240px */}
       <Sidebar />
 
-      {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         <Topbar />
 
         <main className="p-8 max-w-7xl w-full mx-auto flex flex-col gap-8">
-          {/* Greeting Section */}
           <div className="flex flex-col gap-1.5">
             <h1 className="text-title-lg font-bold text-lumora-primary tracking-tight">
               {greeting || `Hey ${userName}, look who decided to show up?`}
@@ -124,7 +124,6 @@ export default function DashboardPage() {
             <ErrorBanner message={decksError?.message || "Could not load your decks."} />
           )}
 
-          {/* 4 Stat Tiles */}
           <section aria-label="Overview stats">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[14px]">
               <StatTile
@@ -141,7 +140,7 @@ export default function DashboardPage() {
               />
               <StatTile
                 label="Cards Due"
-                value={stats.cardsDue}
+                value={isDueLoading ? "…" : stats.cardsDue}
                 subtext="to review"
                 icon={Clock}
               />
@@ -154,7 +153,6 @@ export default function DashboardPage() {
             </div>
           </section>
 
-          {/* Study Now Banner -- only makes sense once the user has at least 1 deck */}
           {recentDecks.length > 0 && (
             <section aria-label="Continue studying">
               <StudyNowCard
@@ -165,7 +163,6 @@ export default function DashboardPage() {
             </section>
           )}
 
-          {/* Your Decks Section */}
           <section aria-label="Recent decks" className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <div>
