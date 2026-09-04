@@ -3,11 +3,12 @@
 import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, Lightbulb } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { setAuth, isAuthenticated } from "@/lib/auth";
 import { LoginResponse } from "@/types/user";
 import { ErrorBanner } from "@/components/shared/ErrorBanner";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 function LoginForm() {
   const router = useRouter();
@@ -25,10 +26,10 @@ function LoginForm() {
       router.replace("/dashboard");
     }
     if (searchParams.get("expired") === "1") {
-      setErrorMessage("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.");
+      setErrorMessage("Your session has expired, please log in again.");
     }
     if (searchParams.get("registered") === "1") {
-      setSuccessMessage("Tạo tài khoản thành công! Đăng nhập để tiếp tục.");
+      setSuccessMessage("Account created successfully! Log in to continue.");
     }
   }, [router, searchParams]);
 
@@ -38,7 +39,7 @@ function LoginForm() {
     setSuccessMessage("");
 
     if (!email.trim() || !password) {
-      setErrorMessage("Vui lòng nhập đầy đủ email và mật khẩu.");
+      setErrorMessage("Please enter both email and password.");
       return;
     }
 
@@ -61,46 +62,43 @@ function LoginForm() {
 
       router.push("/dashboard");
     } catch {
-      // Per spec: Hiển thị đúng câu "Sai tên đăng nhập hoặc mật khẩu." không lộ chi tiết field nào sai
-      setErrorMessage("Sai tên đăng nhập hoặc mật khẩu.");
+      setErrorMessage("Incorrect email or password.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-lumora-bg p-4">
+    <div className="min-h-screen w-full flex items-center justify-center bg-lumora-bg p-4 relative">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-[400px] bg-lumora-surface border border-lumora-border rounded-card p-8 shadow-sm">
-        {/* Logo */}
         <div className="flex items-center gap-2.5 mb-6">
-          <div className="w-[26px] h-[26px] rounded-[7px] bg-lumora-primary flex items-center justify-center text-lumora-bg font-bold text-[14px]">
-            L
+          <div className="w-[26px] h-[26px] rounded-[7px] bg-lumora-primary flex items-center justify-center text-lumora-bg">
+            <Lightbulb className="w-[15px] h-[15px] stroke-[2.2]" />
           </div>
           <span className="font-bold text-[18px] tracking-tight text-lumora-primary">
             Lumora
           </span>
         </div>
 
-        {/* Heading */}
         <h1 className="text-title-page font-bold text-lumora-primary mb-6">
-          Đăng nhập
+          Log In
         </h1>
 
-        {/* Success Alert */}
         {successMessage && (
           <div className="mb-4 p-3 rounded-input border border-lumora-border bg-lumora-surface-hover text-lumora-primary text-body-default font-medium">
             {successMessage}
           </div>
         )}
 
-        {/* Error Alert using Danger token */}
         {errorMessage && (
           <div className="mb-4">
             <ErrorBanner message={errorMessage} />
           </div>
         )}
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
             <label
@@ -114,7 +112,7 @@ function LoginForm() {
               type="email"
               autoComplete="email"
               required
-              placeholder="ten@example.com"
+              placeholder="name@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-lumora-bg border border-lumora-border rounded-input px-3.5 py-2.5 text-body-default text-lumora-primary placeholder:text-lumora-muted focus:outline-none focus:border-lumora-primary transition-colors"
@@ -126,7 +124,7 @@ function LoginForm() {
               htmlFor="password"
               className="block text-caption-xs font-semibold uppercase tracking-wider text-lumora-secondary mb-1.5"
             >
-              Mật khẩu
+              Password
             </label>
             <div className="relative">
               <input
@@ -142,7 +140,7 @@ function LoginForm() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                aria-label={showPassword ? "Hide password" : "Show password"}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-lumora-secondary hover:text-lumora-primary transition-colors"
               >
                 {showPassword ? (
@@ -160,18 +158,17 @@ function LoginForm() {
             className="w-full mt-2 py-2.5 px-4 rounded-btn bg-lumora-btn text-lumora-btn-text text-body-default font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-opacity"
           >
             {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-            <span>Đăng nhập</span>
+            <span>Log In</span>
           </button>
         </form>
 
-        {/* Footer */}
         <p className="mt-6 text-center text-body-default text-lumora-secondary">
-          Chưa có tài khoản?{" "}
+          Don&apos;t have an account?{" "}
           <Link
             href="/register"
             className="font-semibold text-lumora-primary hover:underline"
           >
-            Đăng ký
+            Sign Up
           </Link>
         </p>
       </div>

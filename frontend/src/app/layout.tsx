@@ -5,7 +5,7 @@ import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 
 const manrope = Manrope({
-  subsets: ["latin", "vietnamese"],
+  subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
   variable: "--font-manrope",
   display: "swap",
@@ -19,8 +19,8 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Lumora — Thông minh hơn mỗi ngày",
-  description: "Ứng dụng flashcard và spaced repetition học từ vựng hiệu quả",
+  title: "Lumora — Smart Flashcard Learning",
+  description: "Efficient vocabulary and flashcard learning with spaced repetition.",
 };
 
 export default function RootLayout({
@@ -29,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="vi" className="dark" suppressHydrationWarning>
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{

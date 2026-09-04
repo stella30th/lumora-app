@@ -3,11 +3,12 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, Lightbulb } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { setAuth } from "@/lib/auth";
 import { LoginResponse, UserResponse } from "@/types/user";
 import { ErrorBanner } from "@/components/shared/ErrorBanner";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -24,31 +25,29 @@ export default function RegisterPage() {
     e.preventDefault();
     setErrorMessage("");
 
-    // Client-side validation matching backend UserRegisterRequest DTO
     if (!username.trim() || !email.trim() || !password) {
-      setErrorMessage("Vui lòng điền đầy đủ các trường thông tin.");
+      setErrorMessage("Please fill in all fields.");
       return;
     }
 
     if (username.trim().length > 50) {
-      setErrorMessage("Tên đăng nhập không được vượt quá 50 ký tự.");
+      setErrorMessage("Username must not exceed 50 characters.");
       return;
     }
 
     if (password.length < 6) {
-      setErrorMessage("Mật khẩu phải có tối thiểu 6 ký tự.");
+      setErrorMessage("Password must be at least 6 characters.");
       return;
     }
 
     if (password !== confirmPassword) {
-      setErrorMessage("Mật khẩu xác nhận không khớp.");
+      setErrorMessage("Passwords do not match.");
       return;
     }
 
     setIsLoading(true);
 
     try {
-      // 1. Call Register API
       await apiClient<UserResponse>("/api/users/register", {
         method: "POST",
         skipAuth: true,
@@ -59,8 +58,6 @@ export default function RegisterPage() {
         }),
       });
 
-      // 2. Tự động đăng nhập sau khi đăng ký thành công (Auto-login flow)
-      // Giúp người dùng vào thẳng Dashboard mà không phải gõ lại thông tin
       try {
         const loginData = await apiClient<LoginResponse>("/api/users/login", {
           method: "POST",
@@ -81,13 +78,12 @@ export default function RegisterPage() {
 
         router.push("/dashboard");
       } catch {
-        // Fallback: nếu auto-login gặp trục trặc, đưa về trang login kèm thông báo
         router.push("/login?registered=1");
       }
     } catch (err: unknown) {
       const error = err as Error;
       setErrorMessage(
-        error.message || "Đăng ký không thành công. Vui lòng thử lại."
+        error.message || "Registration failed. Please try again."
       );
     } finally {
       setIsLoading(false);
@@ -95,45 +91,44 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-lumora-bg p-4">
+    <div className="min-h-screen w-full flex items-center justify-center bg-lumora-bg p-4 relative">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-[400px] bg-lumora-surface border border-lumora-border rounded-card p-8 shadow-sm">
-        {/* Logo */}
         <div className="flex items-center gap-2.5 mb-6">
-          <div className="w-[26px] h-[26px] rounded-[7px] bg-lumora-primary flex items-center justify-center text-lumora-bg font-bold text-[14px]">
-            L
+          <div className="w-[26px] h-[26px] rounded-[7px] bg-lumora-primary flex items-center justify-center text-lumora-bg">
+            <Lightbulb className="w-[15px] h-[15px] stroke-[2.2]" />
           </div>
           <span className="font-bold text-[18px] tracking-tight text-lumora-primary">
             Lumora
           </span>
         </div>
 
-        {/* Heading */}
         <h1 className="text-title-page font-bold text-lumora-primary mb-6">
-          Tạo tài khoản
+          Create Account
         </h1>
 
-        {/* Error Alert using Danger token */}
         {errorMessage && (
           <div className="mb-4">
             <ErrorBanner message={errorMessage} />
           </div>
         )}
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
             <label
               htmlFor="username"
               className="block text-caption-xs font-semibold uppercase tracking-wider text-lumora-secondary mb-1.5"
             >
-              Tên đăng nhập
+              Username
             </label>
             <input
               id="username"
               type="text"
               required
               maxLength={50}
-              placeholder="nguyenvana"
+              placeholder="johndoe"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full bg-lumora-bg border border-lumora-border rounded-input px-3.5 py-2.5 text-body-default text-lumora-primary placeholder:text-lumora-muted focus:outline-none focus:border-lumora-primary transition-colors"
@@ -151,7 +146,7 @@ export default function RegisterPage() {
               id="email"
               type="email"
               required
-              placeholder="ten@example.com"
+              placeholder="name@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-lumora-bg border border-lumora-border rounded-input px-3.5 py-2.5 text-body-default text-lumora-primary placeholder:text-lumora-muted focus:outline-none focus:border-lumora-primary transition-colors"
@@ -163,7 +158,7 @@ export default function RegisterPage() {
               htmlFor="password"
               className="block text-caption-xs font-semibold uppercase tracking-wider text-lumora-secondary mb-1.5"
             >
-              Mật khẩu (tối thiểu 6 ký tự)
+              Password (min. 6 characters)
             </label>
             <div className="relative">
               <input
@@ -179,7 +174,7 @@ export default function RegisterPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                aria-label={showPassword ? "Hide password" : "Show password"}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-lumora-secondary hover:text-lumora-primary transition-colors"
               >
                 {showPassword ? (
@@ -196,7 +191,7 @@ export default function RegisterPage() {
               htmlFor="confirmPassword"
               className="block text-caption-xs font-semibold uppercase tracking-wider text-lumora-secondary mb-1.5"
             >
-              Xác nhận mật khẩu
+              Confirm Password
             </label>
             <input
               id="confirmPassword"
@@ -215,18 +210,17 @@ export default function RegisterPage() {
             className="w-full mt-2 py-2.5 px-4 rounded-btn bg-lumora-btn text-lumora-btn-text text-body-default font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-opacity"
           >
             {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-            <span>Tạo tài khoản</span>
+            <span>Create Account</span>
           </button>
         </form>
 
-        {/* Footer */}
         <p className="mt-6 text-center text-body-default text-lumora-secondary">
-          Đã có tài khoản?{" "}
+          Already have an account?{" "}
           <Link
             href="/login"
             className="font-semibold text-lumora-primary hover:underline"
           >
-            Đăng nhập
+            Log In
           </Link>
         </p>
       </div>

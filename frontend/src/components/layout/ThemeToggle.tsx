@@ -15,8 +15,8 @@ export function ThemeToggle({ className = "" }: ThemeToggleProps) {
     <button
       type="button"
       onClick={toggleTheme}
-      aria-label="Chuyển chế độ sáng/tối"
-      title={theme === "dark" ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"}
+      aria-label="Toggle light/dark mode"
+      title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
       className={`w-9 h-9 flex items-center justify-center rounded-btn border border-lumora-border bg-lumora-surface text-lumora-secondary hover:text-lumora-primary hover:bg-lumora-surface-hover transition-colors ${className}`}
     >
       {theme === "dark" ? (
