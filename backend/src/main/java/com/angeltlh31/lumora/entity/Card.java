@@ -23,10 +23,10 @@ public class Card {
     private Deck deck;
 
     @Column(nullable = false, length = 255)
-    private String term; // mat truoc cua the: tu vung / cau hoi
+    private String term;
 
     @Column(nullable = false, length = 1000)
-    private String definition; // mat sau cua the: nghia / dap an
+    private String definition;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

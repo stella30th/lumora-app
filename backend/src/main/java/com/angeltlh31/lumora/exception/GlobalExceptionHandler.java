@@ -11,8 +11,6 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-// Day chinh la "middleware" xu ly loi tap trung ma ban nhac toi luc dau:
-// moi Controller khong can tu try-catch, exception nem ra se roi vao day.
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -43,9 +41,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
     }
 
-    // Ngay 15: cung tra 401 nhu InvalidCredentialException (ca 2 deu la "chua xac thuc duoc"),
-    // nhung tach class rieng vi ngu canh khac nhau - loi nay xay ra o /refresh (token het
-    // han/bi thu hoi/khong ton tai), khong phai o /login (sai email/password).
     @ExceptionHandler(InvalidRefreshTokenException.class)
     public ResponseEntity<Map<String, Object>> handleInvalidRefreshToken(InvalidRefreshTokenException ex) {
         Map<String, Object> body = new HashMap<>();
@@ -55,10 +50,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
     }
 
-    // Ngay 9 - Authorization: khac 401 (handleInvalidCredential/authenticationEntryPoint o
-    // SecurityConfig - "chua biet anh la ai") - day la 403 ("biet anh la ai roi, nhung anh
-    // khong co quyen voi cai NAY"). Nem ra tu Service SAU KHI da xac dinh duoc chu so huu that
-    // su cua tai nguyen (Deck/Card), nen khong the lam bang @PreAuthorize khai bao tinh duoc.
     @ExceptionHandler(ForbiddenException.class)
     public ResponseEntity<Map<String, Object>> handleForbidden(ForbiddenException ex) {
         Map<String, Object> body = new HashMap<>();
@@ -68,7 +59,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
     }
 
-    // Duoc nem ra khi @Valid tren @RequestBody phat hien field vi pham (vd @NotBlank, @Size)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex) {
         Map<String, String> fieldErrors = new HashMap<>();

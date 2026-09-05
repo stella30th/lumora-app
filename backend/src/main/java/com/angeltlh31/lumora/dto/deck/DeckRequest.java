@@ -5,7 +5,6 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
-// Du lieu client gui LEN khi tao/sua Deck. Khong dung Entity Deck truc tiep lam input.
 @Getter
 @Setter
 public class DeckRequest {

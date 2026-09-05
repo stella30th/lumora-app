@@ -5,7 +5,6 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 
-// Chu y: KHONG co field password/passwordHash o day - khong bao gio tra mat khau ve cho client.
 @Getter
 @Builder
 public class UserResponse {

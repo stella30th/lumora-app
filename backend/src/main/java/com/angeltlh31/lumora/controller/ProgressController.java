@@ -10,10 +10,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-// Ngay 18: khac voi CardProgressController (long route theo Card/Deck cu the -
-// /api/cards/{cardId}/review, /api/decks/{deckId}/review-queue), thong ke o day la CUA
-// NGUOI DUNG DANG DANG NHAP, gom tren TAT CA deck/card cua ho - nen route phang
-// "/api/progress/stats", khong long duoi Deck/Card nao ca.
 @RestController
 @RequestMapping("/api/progress")
 @RequiredArgsConstructor

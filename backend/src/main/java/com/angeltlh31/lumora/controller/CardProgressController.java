@@ -13,9 +13,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-// Giong CardController - khong dat @RequestMapping o class vi 2 nhom route khac goc:
-// /api/cards/{cardId}/review (thao tac tren 1 Card) va /api/decks/{deckId}/review-queue
-// (truy van theo Deck cha, cung kieu long route nhu /api/decks/{deckId}/cards).
 @RestController
 @RequiredArgsConstructor
 public class CardProgressController {

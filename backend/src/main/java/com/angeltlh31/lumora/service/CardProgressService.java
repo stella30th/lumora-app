@@ -29,9 +29,6 @@ import java.util.stream.Collectors;
 @Transactional
 public class CardProgressService {
 
-    // He so cong/tru EF va nguong "tot nghiep" tu LEARNING sang REVIEW - ban rut gon nhi phan
-    // cua SM-2 (chi 2 muc dung/sai, tuong duong q=5/q=0 trong cong thuc goc). Xem
-    // docs/recap-day12.md phan ly thuyet de biet vi sao chon dung cac hang so nay.
     private static final double EASE_BONUS_CORRECT = 0.1;
     private static final double EASE_PENALTY_WRONG = 0.8;
     private static final double MIN_EASE_FACTOR = 1.3;
@@ -42,13 +39,9 @@ public class CardProgressService {
     private final UserRepository userRepository;
     private final CardProgressRepository cardProgressRepository;
     private final DeckAccessService deckAccessService;
-    // Ngay 18: chi GHI (save), khong bao gio doc lai o Service nay - phan DOC de tinh
-    // streak/lich su nam o ProgressService, dung ReviewLogRepository rieng cua no.
+
     private final ReviewLogRepository reviewLogRepository;
 
-    // Ngay 12: verifyReadAccess (KHONG phai verifyOwnership) - on tap chi can DOC duoc Deck
-    // (chu so huu HOAC Deck public), giong het quyen xem Card (CardService.getCardsByDeck).
-    // On mot Deck public cua nguoi khac van hop le, chi khong duoc SUA noi dung Card cua ho.
     public CardProgressResponse submitReview(Long cardId, Long userId, boolean correct) {
         Card card = cardRepository.findById(cardId)
                 .orElseThrow(() -> new ResourceNotFoundException("Card not found with id=" + cardId));
@@ -60,10 +53,6 @@ public class CardProgressService {
         applyReview(progress, correct);
         CardProgress saved = cardProgressRepository.save(progress);
 
-        // Ngay 18: ghi THEM 1 dong ReviewLog moi lan submitReview() thanh cong - khac voi
-        // CardProgress o tren (UPDATE 1 dong duy nhat), day la INSERT 1 dong MOI moi lan,
-        // khong bao gio dung/sua dong cu. Dat SAU KHI applyReview()/save() thanh cong de
-        // dam bao chi log dung nhung lan review THAT SU hop le (da qua het kiem tra o tren).
         reviewLogRepository.save(ReviewLog.builder()
                 .user(progress.getUser())
                 .card(card)
@@ -83,8 +72,6 @@ public class CardProgressService {
         List<Card> dueCards = cardRepository.findDueCards(deckId, requesterId, LocalDate.now());
         List<Long> cardIds = dueCards.stream().map(Card::getId).toList();
 
-        // Load progress cua tat ca the trong 1 lan (tranh N+1) - key theo cardId de tra cuu
-        // O(1) o buoc map ben duoi, thay vi loop tim tuyen tinh cho tung Card.
         Map<Long, CardProgress> progressByCardId = cardProgressRepository
                 .findByUserIdAndCardIdIn(requesterId, cardIds)
                 .stream()
@@ -95,16 +82,6 @@ public class CardProgressService {
                 .toList();
     }
 
-    // Ngay 12 - trai tim cua thuat toan spaced repetition (ban rut gon nhi phan cua SM-2).
-    // Cong thuc goc dung thang chat luong q=0..5; o day chi con 2 nhanh dung/sai tuong duong
-    // q=5 va q=0. Xem docs/recap-day12.md de doi chieu voi cong thuc SM-2 nguyen ban.
-    //
-    // Ngay 13: bo "private" -> chuyen thanh package-private (khong ghi modifier nao ca) DE
-    // CardProgressServiceTest (cung package, khac thu muc src/test) co the goi thang method
-    // nay ma khong can @SpringBootTest hay Mockito - vi day la logic thuan (khong dung DB,
-    // khong dung repository nao trong 5 field cua class). Danh doi: giam encapsulation mot
-    // chut (package khac van khong goi duoc, chi rieng test cung package moi goi duoc) de
-    // doi lay kha nang test nhanh, khong can boot Spring context. Xem docs/recap-day13.md.
     void applyReview(CardProgress progress, boolean correct) {
         if (correct) {
             progress.setRepetitions(progress.getRepetitions() + 1);
@@ -123,9 +100,6 @@ public class CardProgressService {
         progress.setNextReviewDate(LocalDate.now().plusDays(progress.getIntervalDays()));
     }
 
-    // 3 buoc interval kinh dien cua SM-2: 1 ngay -> 6 ngay -> tu lan thu 3 tro di nhan don EF
-    // (interval cu * easeFactor). Ham nay duoc goi SAU KHI repetitions da +1, nen
-    // "repetitions == 1" nghia la "lan tra loi dung dau tien", khong phai "lan dau tien on".
     private int nextInterval(CardProgress progress) {
         return switch (progress.getRepetitions()) {
             case 1 -> 1;
@@ -137,9 +111,7 @@ public class CardProgressService {
     private CardProgress createNewProgress(Long userId, Card card) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id=" + userId));
-        // easeFactor/intervalDays/repetitions/status da co @Builder.Default trong entity
-        // (2.5/0/0/NEW) - nextReviewDate se duoc applyReview() set NGAY SAU DAY, truoc khi
-        // save(), nen khong vi pham rang buoc nullable=false cua cot next_review_date.
+
         return CardProgress.builder()
                 .user(user)
                 .card(card)
@@ -159,8 +131,6 @@ public class CardProgressService {
                 .build();
     }
 
-    // progress co the null - nghia la Card nay chua tung duoc user ôn lan nao, chua co dong
-    // CardProgress nao trong DB ca (findDueCards() van tra ve Card nay vi LEFT JOIN giu lai).
     private DueCardResponse toDueResponse(Card card, CardProgress progress) {
         return DueCardResponse.builder()
                 .id(card.getId())

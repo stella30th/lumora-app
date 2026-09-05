@@ -13,18 +13,12 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-// Khong dat @RequestMapping o class vi co 2 nhom route khac nhau:
-// /api/decks/{deckId}/cards (long theo Deck cha) va /api/cards/{id} (thao tac truc tiep tren 1 Card)
 @RestController
 @RequiredArgsConstructor
 public class CardController {
 
     private final CardService cardService;
 
-    // Ngay 9: them @AuthenticationPrincipal Long ownerId cho ca 3 endpoint GHI (create/update/
-    // delete) - day la nguoi dang goi, se duoc CardService doi chieu voi chu Deck cha. (Ngay 9,
-    // 2 endpoint DOC ben duoi con "ho": chi can token hop le la xem duoc Card cua Deck bat ky,
-    // khong phan biet public/private - da xu ly o Ngay 10, xem comment truoc getCardsByDeck.)
     @Operation(summary = "Tao Card moi trong 1 Deck (chi chu so huu Deck cha)")
     @PostMapping("/api/decks/{deckId}/cards")
     public ResponseEntity<CardResponse> createCard(@PathVariable Long deckId,
@@ -34,8 +28,6 @@ public class CardController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    // Ngay 10: them @AuthenticationPrincipal Long requesterId cho ca 2 endpoint DOC - truoc
-    // Ngay 10, comment o day con ghi 2 endpoint nay "chua dung ownerId", gio da het con no do.
     @Operation(summary = "Lay danh sach Card trong 1 Deck (yeu cau Deck public hoac la chu so huu)")
     @GetMapping("/api/decks/{deckId}/cards")
     public ResponseEntity<List<CardResponse>> getCardsByDeck(@PathVariable Long deckId,

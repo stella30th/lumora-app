@@ -11,6 +11,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByEmail(String email);
 
-    // Dung cho Login: tim User theo email de lay passwordHash ra so khop
+    boolean existsByUsernameAndIdNot(String username, Long id);
+
+    boolean existsByEmailAndIdNot(String email, Long id);
+
     Optional<User> findByEmail(String email);
 }
