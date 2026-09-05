@@ -6,11 +6,13 @@ import com.angeltlh31.lumora.entity.Card;
 import com.angeltlh31.lumora.entity.CardProgress;
 import com.angeltlh31.lumora.entity.Deck;
 import com.angeltlh31.lumora.entity.ReviewStatus;
+import com.angeltlh31.lumora.entity.ReviewLog;
 import com.angeltlh31.lumora.entity.User;
 import com.angeltlh31.lumora.exception.ResourceNotFoundException;
 import com.angeltlh31.lumora.repository.CardProgressRepository;
 import com.angeltlh31.lumora.repository.CardRepository;
 import com.angeltlh31.lumora.repository.DeckRepository;
+import com.angeltlh31.lumora.repository.ReviewLogRepository;
 import com.angeltlh31.lumora.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -40,6 +42,9 @@ public class CardProgressService {
     private final UserRepository userRepository;
     private final CardProgressRepository cardProgressRepository;
     private final DeckAccessService deckAccessService;
+    // Ngay 18: chi GHI (save), khong bao gio doc lai o Service nay - phan DOC de tinh
+    // streak/lich su nam o ProgressService, dung ReviewLogRepository rieng cua no.
+    private final ReviewLogRepository reviewLogRepository;
 
     // Ngay 12: verifyReadAccess (KHONG phai verifyOwnership) - on tap chi can DOC duoc Deck
     // (chu so huu HOAC Deck public), giong het quyen xem Card (CardService.getCardsByDeck).
@@ -53,7 +58,20 @@ public class CardProgressService {
                 .orElseGet(() -> createNewProgress(userId, card));
 
         applyReview(progress, correct);
-        return toResponse(cardProgressRepository.save(progress));
+        CardProgress saved = cardProgressRepository.save(progress);
+
+        // Ngay 18: ghi THEM 1 dong ReviewLog moi lan submitReview() thanh cong - khac voi
+        // CardProgress o tren (UPDATE 1 dong duy nhat), day la INSERT 1 dong MOI moi lan,
+        // khong bao gio dung/sua dong cu. Dat SAU KHI applyReview()/save() thanh cong de
+        // dam bao chi log dung nhung lan review THAT SU hop le (da qua het kiem tra o tren).
+        reviewLogRepository.save(ReviewLog.builder()
+                .user(progress.getUser())
+                .card(card)
+                .correct(correct)
+                .reviewedAt(progress.getLastReviewedAt())
+                .build());
+
+        return toResponse(saved);
     }
 
     @Transactional(readOnly = true)
