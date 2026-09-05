@@ -44,9 +44,6 @@ public class ReviewLog {
     @Column(nullable = false)
     private boolean correct;
 
-    // Ngay dung de tinh streak/lich su - KHONG dung @Builder.Default vi luon duoc CardProgressService
-    // gan ro rang bang LocalDateTime.now() ngay luc tao (giong lastReviewedAt cua CardProgress),
-    // khong co truong hop nao can gia tri mac dinh khac.
     @Column(name = "reviewed_at", nullable = false)
     private LocalDateTime reviewedAt;
 }

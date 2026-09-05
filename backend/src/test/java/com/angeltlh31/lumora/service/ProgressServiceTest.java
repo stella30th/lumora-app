@@ -99,8 +99,13 @@ class ProgressServiceTest {
         // 1 dong du lieu tho: hom nay co 3 lan DUNG - phan con lai cua 30 ngay se duoc
         // buildHistory() tu dien day 0/0 (xem ProgressService.buildHistory()).
         Object[] row = new Object[]{today, Boolean.TRUE, 3L};
+        // Collections.singletonList(row) - KHONG dung List.of(row): List.of(E... elements)
+        // la varargs, va row DA CO SAN kieu Object[] nen javac hieu nham thanh "list 3
+        // phan tu Object" (unpack row ra) thay vi "list 1 phan tu la chinh row" - loi bien
+        // dich that su gap phai, xem lai neu quen. singletonList(T o) nhan 1 tham so thuong
+        // (khong phai varargs) nen khong bi nham nhu vay.
         when(reviewLogRepository.countGroupedByDateAndCorrect(anyLong(), any(LocalDateTime.class)))
-                .thenReturn(List.of(row));
+                .thenReturn(Collections.singletonList(row));
 
         ReviewStatsResponse stats = service.getStats(userId);
 
