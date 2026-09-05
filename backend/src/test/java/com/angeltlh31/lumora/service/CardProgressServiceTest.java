@@ -5,6 +5,7 @@ import com.angeltlh31.lumora.dto.cardprogress.DueCardResponse;
 import com.angeltlh31.lumora.entity.Card;
 import com.angeltlh31.lumora.entity.CardProgress;
 import com.angeltlh31.lumora.entity.Deck;
+import com.angeltlh31.lumora.entity.ReviewLog;
 import com.angeltlh31.lumora.entity.ReviewStatus;
 import com.angeltlh31.lumora.entity.User;
 import com.angeltlh31.lumora.exception.ForbiddenException;
@@ -12,6 +13,7 @@ import com.angeltlh31.lumora.exception.ResourceNotFoundException;
 import com.angeltlh31.lumora.repository.CardProgressRepository;
 import com.angeltlh31.lumora.repository.CardRepository;
 import com.angeltlh31.lumora.repository.DeckRepository;
+import com.angeltlh31.lumora.repository.ReviewLogRepository;
 import com.angeltlh31.lumora.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -80,6 +82,11 @@ class CardProgressServiceTest {
     private CardProgressRepository cardProgressRepository;
     @Mock
     private DeckAccessService deckAccessService;
+    // Ngay 18: them field nay CHI DE @InjectMocks khop du 6 tham so constructor cua
+    // CardProgressService (Lombok @RequiredArgsConstructor tu sinh) - cac test cu (Ngay
+    // 13/14) khong dung toi mock nay nen KHONG can stub gi them, no la mock-rong.
+    @Mock
+    private ReviewLogRepository reviewLogRepository;
 
     @InjectMocks
     private CardProgressService service;
@@ -220,6 +227,10 @@ class CardProgressServiceTest {
         // VI da xay ra sau khi goi service, giong nhu "coi lai lich su cuoc goi" cua mock.
         verify(deckAccessService).verifyReadAccess(deck, userId);
         verify(cardProgressRepository).save(existingProgress);
+        // Ngay 18: submitReview() gio con phai ghi THEM 1 dong ReviewLog (song song voi
+        // save() CardProgress o tren) - verify(...).save(any()) chi kiem tra "co goi hay
+        // khong", chua kiem tra NOI DUNG (xem ProgressServiceTest cho phan tinh streak).
+        verify(reviewLogRepository).save(any(ReviewLog.class));
         // Da co san progress (findByUserIdAndCardId tra ve non-empty) nen nhanh createNewProgress()
         // KHONG duoc chay - never() xac nhan 1 method KHONG bao gio duoc goi trong test nay.
         verify(userRepository, never()).findById(any());
