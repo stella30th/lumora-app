@@ -16,6 +16,7 @@ import * as decksApi from "@/lib/decks";
 import * as cardsApi from "@/lib/cards";
 import { Deck, DeckFormInput } from "@/types/deck";
 import { Card } from "@/types/card";
+import { PagedResponse } from "@/types/pagination";
 
 function DeckGridItem({
   deck,
@@ -26,13 +27,18 @@ function DeckGridItem({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const { data: cards } = useQuery<Card[], Error>({
+  const { data: cards } = useQuery<PagedResponse<Card>, Error>({
     queryKey: ["cards", deck.id],
     queryFn: () => cardsApi.getCardsByDeck(deck.id),
   });
 
   return (
-    <DeckCard deck={deck} cardCount={cards?.length} onEdit={onEdit} onDelete={onDelete} />
+    <DeckCard
+      deck={deck}
+      cardCount={cards?.page.totalElements}
+      onEdit={onEdit}
+      onDelete={onDelete}
+    />
   );
 }
 
@@ -47,14 +53,15 @@ export default function DecksPage() {
   }, [router]);
 
   const {
-    data: decks,
+    data: decksResponse,
     isLoading,
     isError,
     error,
-  } = useQuery<Deck[], Error>({
+  } = useQuery<PagedResponse<Deck>, Error>({
     queryKey: ["decks"],
     queryFn: decksApi.getDecks,
   });
+  const decks = decksResponse?.content;
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingDeck, setEditingDeck] = useState<Deck | null>(null);

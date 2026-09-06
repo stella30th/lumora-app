@@ -14,6 +14,7 @@ import * as decksApi from "@/lib/decks";
 import * as reviewApi from "@/lib/review";
 import { Deck } from "@/types/deck";
 import { DueCard } from "@/types/card";
+import { PagedResponse } from "@/types/pagination";
 
 export default function ProgressPage() {
   const router = useRouter();
@@ -23,14 +24,15 @@ export default function ProgressPage() {
   }, [router]);
 
   const {
-    data: decks,
+    data: decksResponse,
     isLoading: decksLoading,
     isError,
     error,
-  } = useQuery<Deck[], Error>({
+  } = useQuery<PagedResponse<Deck>, Error>({
     queryKey: ["decks"],
     queryFn: decksApi.getDecks,
   });
+  const decks = decksResponse?.content;
 
   const dueQueries = useQueries({
     queries: (decks ?? []).map((deck) => ({
@@ -64,7 +66,7 @@ export default function ProgressPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[14px]">
             <StatTile
               label="Total Decks"
-              value={decksLoading ? "…" : decks?.length ?? 0}
+              value={decksLoading ? "…" : decksResponse?.page.totalElements ?? 0}
               subtext="decks"
               icon={Layers}
             />

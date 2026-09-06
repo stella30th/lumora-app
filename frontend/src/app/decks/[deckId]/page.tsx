@@ -18,6 +18,7 @@ import * as decksApi from "@/lib/decks";
 import * as cardsApi from "@/lib/cards";
 import { Deck, DeckFormInput } from "@/types/deck";
 import { Card, CardFormInput } from "@/types/card";
+import { PagedResponse } from "@/types/pagination";
 
 export default function DeckDetailPage() {
   const params = useParams();
@@ -43,15 +44,16 @@ export default function DeckDetailPage() {
   });
 
   const {
-    data: cards,
+    data: cardsResponse,
     isLoading: areCardsLoading,
     isError: isCardsError,
     error: cardsError,
-  } = useQuery<Card[], Error>({
+  } = useQuery<PagedResponse<Card>, Error>({
     queryKey: ["cards", deckId],
     queryFn: () => cardsApi.getCardsByDeck(deckId),
     enabled: Number.isFinite(deckId),
   });
+  const cards = cardsResponse?.content;
 
   const [isEditDeckOpen, setIsEditDeckOpen] = useState(false);
   const [cardFormOpen, setCardFormOpen] = useState(false);

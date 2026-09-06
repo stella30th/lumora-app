@@ -1,8 +1,9 @@
 import { apiClient } from "./api-client";
 import { Deck, DeckFormInput } from "@/types/deck";
+import { PagedResponse } from "@/types/pagination";
 
-export function getDecks(): Promise<Deck[]> {
-  return apiClient<Deck[]>("/api/decks");
+export function getDecks(): Promise<PagedResponse<Deck>> {
+  return apiClient<PagedResponse<Deck>>("/api/decks");
 }
 
 export function getDeck(id: number): Promise<Deck> {

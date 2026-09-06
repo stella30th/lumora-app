@@ -17,6 +17,7 @@ import * as cardsApi from "@/lib/cards";
 import * as reviewApi from "@/lib/review";
 import { Deck, DashboardStats } from "@/types/deck";
 import { Card, DueCard } from "@/types/card";
+import { PagedResponse } from "@/types/pagination";
 
 const SARCASM_GREETINGS = [
   (name: string, _due: number, streak: number) =>
@@ -45,14 +46,15 @@ export default function DashboardPage() {
   }, [router]);
 
   const {
-    data: decks,
+    data: decksResponse,
     isLoading: areDecksLoading,
     isError: isDecksError,
     error: decksError,
-  } = useQuery<Deck[], Error>({
+  } = useQuery<PagedResponse<Deck>, Error>({
     queryKey: ["decks"],
     queryFn: decksApi.getDecks,
   });
+  const decks = decksResponse?.content;
 
   const cardCountQueries = useQueries({
     queries: (decks ?? []).map((deck) => ({
@@ -72,11 +74,14 @@ export default function DashboardPage() {
 
   const cardCountByDeckId = new Map<number, number | undefined>();
   (decks ?? []).forEach((deck, i) => {
-    cardCountByDeckId.set(deck.id, (cardCountQueries[i]?.data as Card[] | undefined)?.length);
+    cardCountByDeckId.set(
+      deck.id,
+      (cardCountQueries[i]?.data as PagedResponse<Card> | undefined)?.page.totalElements
+    );
   });
 
   const totalCards = cardCountQueries.reduce(
-    (sum, q) => sum + ((q.data as Card[] | undefined)?.length ?? 0),
+    (sum, q) => sum + ((q.data as PagedResponse<Card> | undefined)?.page.totalElements ?? 0),
     0
   );
   const totalDue = dueQueries.reduce(

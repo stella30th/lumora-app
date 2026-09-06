@@ -12,6 +12,7 @@ import { ErrorBanner } from "@/components/shared/ErrorBanner";
 import { isAuthenticated } from "@/lib/auth";
 import * as decksApi from "@/lib/decks";
 import { Deck } from "@/types/deck";
+import { PagedResponse } from "@/types/pagination";
 
 export default function StudyDeckPickerPage() {
   const router = useRouter();
@@ -21,14 +22,15 @@ export default function StudyDeckPickerPage() {
   }, [router]);
 
   const {
-    data: decks,
+    data: decksResponse,
     isLoading,
     isError,
     error,
-  } = useQuery<Deck[], Error>({
+  } = useQuery<PagedResponse<Deck>, Error>({
     queryKey: ["decks"],
     queryFn: decksApi.getDecks,
   });
+  const decks = decksResponse?.content;
 
   return (
     <div className="min-h-screen flex bg-lumora-bg text-lumora-primary">
