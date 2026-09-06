@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -33,9 +34,10 @@ public class DeckController {
 
     @Operation(summary = "Lay danh sach Deck cua user dang dang nhap (co phan trang)")
     @GetMapping
-    public ResponseEntity<Page<DeckResponse>> getMyDecks(@AuthenticationPrincipal Long ownerId,
-                                                          @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(deckService.getDecksByOwner(ownerId, pageable));
+    public ResponseEntity<PagedModel<DeckResponse>> getMyDecks(@AuthenticationPrincipal Long ownerId,
+                                                                @PageableDefault(size = 20) Pageable pageable) {
+        Page<DeckResponse> page = deckService.getDecksByOwner(ownerId, pageable);
+        return ResponseEntity.ok(new PagedModel<>(page));
     }
 
     @Operation(summary = "Lay danh sach Deck cong khai (khong loc theo chu so huu)")

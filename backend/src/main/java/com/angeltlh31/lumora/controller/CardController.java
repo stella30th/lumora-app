@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -31,10 +32,11 @@ public class CardController {
 
     @Operation(summary = "Lay danh sach Card trong 1 Deck (yeu cau Deck public hoac la chu so huu, co phan trang)")
     @GetMapping("/api/decks/{deckId}/cards")
-    public ResponseEntity<Page<CardResponse>> getCardsByDeck(@PathVariable Long deckId,
-                                                              @AuthenticationPrincipal Long requesterId,
-                                                              @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(cardService.getCardsByDeck(deckId, requesterId, pageable));
+    public ResponseEntity<PagedModel<CardResponse>> getCardsByDeck(@PathVariable Long deckId,
+                                                                    @AuthenticationPrincipal Long requesterId,
+                                                                    @PageableDefault(size = 20) Pageable pageable) {
+        Page<CardResponse> page = cardService.getCardsByDeck(deckId, requesterId, pageable);
+        return ResponseEntity.ok(new PagedModel<>(page));
     }
 
     @Operation(summary = "Xem chi tiet 1 Card (yeu cau Deck cha public hoac la chu so huu)")
