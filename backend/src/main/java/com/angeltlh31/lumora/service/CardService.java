@@ -8,10 +8,10 @@ import com.angeltlh31.lumora.exception.ResourceNotFoundException;
 import com.angeltlh31.lumora.repository.CardRepository;
 import com.angeltlh31.lumora.repository.DeckRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -38,15 +38,13 @@ public class CardService {
     }
 
     @Transactional(readOnly = true)
-    public List<CardResponse> getCardsByDeck(Long deckId, Long requesterId) {
+    public Page<CardResponse> getCardsByDeck(Long deckId, Long requesterId, Pageable pageable) {
         Deck deck = deckRepository.findById(deckId)
                 .orElseThrow(() -> new ResourceNotFoundException("Deck not found with id=" + deckId));
         deckAccessService.verifyReadAccess(deck, requesterId);
 
-        return cardRepository.findByDeckId(deckId)
-                .stream()
-                .map(this::toResponse)
-                .toList();
+        return cardRepository.findByDeckId(deckId, pageable)
+                .map(this::toResponse);
     }
 
     @Transactional(readOnly = true)

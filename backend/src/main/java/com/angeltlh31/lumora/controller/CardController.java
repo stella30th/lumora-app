@@ -6,12 +6,13 @@ import com.angeltlh31.lumora.service.CardService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -28,11 +29,12 @@ public class CardController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @Operation(summary = "Lay danh sach Card trong 1 Deck (yeu cau Deck public hoac la chu so huu)")
+    @Operation(summary = "Lay danh sach Card trong 1 Deck (yeu cau Deck public hoac la chu so huu, co phan trang)")
     @GetMapping("/api/decks/{deckId}/cards")
-    public ResponseEntity<List<CardResponse>> getCardsByDeck(@PathVariable Long deckId,
-                                                              @AuthenticationPrincipal Long requesterId) {
-        return ResponseEntity.ok(cardService.getCardsByDeck(deckId, requesterId));
+    public ResponseEntity<Page<CardResponse>> getCardsByDeck(@PathVariable Long deckId,
+                                                              @AuthenticationPrincipal Long requesterId,
+                                                              @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(cardService.getCardsByDeck(deckId, requesterId, pageable));
     }
 
     @Operation(summary = "Xem chi tiet 1 Card (yeu cau Deck cha public hoac la chu so huu)")

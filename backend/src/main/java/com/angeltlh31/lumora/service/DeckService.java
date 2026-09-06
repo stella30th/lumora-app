@@ -8,6 +8,8 @@ import com.angeltlh31.lumora.exception.ResourceNotFoundException;
 import com.angeltlh31.lumora.repository.DeckRepository;
 import com.angeltlh31.lumora.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,11 +40,9 @@ public class DeckService {
     }
 
     @Transactional(readOnly = true)
-    public List<DeckResponse> getDecksByOwner(Long ownerId) {
-        return deckRepository.findByOwnerId(ownerId)
-                .stream()
-                .map(this::toResponse)
-                .toList();
+    public Page<DeckResponse> getDecksByOwner(Long ownerId, Pageable pageable) {
+        return deckRepository.findByOwnerId(ownerId, pageable)
+                .map(this::toResponse);
     }
 
     @Transactional(readOnly = true)

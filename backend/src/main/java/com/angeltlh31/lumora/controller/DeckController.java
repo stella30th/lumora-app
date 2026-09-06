@@ -6,6 +6,9 @@ import com.angeltlh31.lumora.service.DeckService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -28,10 +31,11 @@ public class DeckController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @Operation(summary = "Lay danh sach Deck cua user dang dang nhap")
+    @Operation(summary = "Lay danh sach Deck cua user dang dang nhap (co phan trang)")
     @GetMapping
-    public ResponseEntity<List<DeckResponse>> getMyDecks(@AuthenticationPrincipal Long ownerId) {
-        return ResponseEntity.ok(deckService.getDecksByOwner(ownerId));
+    public ResponseEntity<Page<DeckResponse>> getMyDecks(@AuthenticationPrincipal Long ownerId,
+                                                          @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(deckService.getDecksByOwner(ownerId, pageable));
     }
 
     @Operation(summary = "Lay danh sach Deck cong khai (khong loc theo chu so huu)")
