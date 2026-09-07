@@ -28,7 +28,7 @@ export default function StudyDeckPickerPage() {
     error,
   } = useQuery<PagedResponse<Deck>, Error>({
     queryKey: ["decks"],
-    queryFn: decksApi.getDecks,
+    queryFn: () => decksApi.getDecks(),
   });
   const decks = decksResponse?.content;
 

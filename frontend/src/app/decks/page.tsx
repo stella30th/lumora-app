@@ -11,6 +11,7 @@ import { DeckFormModal } from "@/components/decks/DeckFormModal";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ErrorBanner } from "@/components/shared/ErrorBanner";
+import { Pagination } from "@/components/shared/Pagination";
 import { isAuthenticated } from "@/lib/auth";
 import * as decksApi from "@/lib/decks";
 import * as cardsApi from "@/lib/cards";
@@ -45,6 +46,7 @@ function DeckGridItem({
 export default function DecksPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [page, setPage] = useState(0);
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -58,10 +60,11 @@ export default function DecksPage() {
     isError,
     error,
   } = useQuery<PagedResponse<Deck>, Error>({
-    queryKey: ["decks"],
-    queryFn: decksApi.getDecks,
+    queryKey: ["decks", page],
+    queryFn: () => decksApi.getDecks(page),
   });
   const decks = decksResponse?.content;
+  const totalPages = decksResponse?.page.totalPages ?? 0;
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingDeck, setEditingDeck] = useState<Deck | null>(null);
@@ -95,6 +98,9 @@ export default function DecksPage() {
     setDeleteError("");
     try {
       await decksApi.deleteDeck(deletingDeck.id);
+      if (decks && decks.length === 1 && page > 0) {
+        setPage((p) => p - 1);
+      }
       await queryClient.invalidateQueries({ queryKey: ["decks"] });
       setDeletingDeck(null);
     } catch (err: unknown) {
@@ -139,16 +145,20 @@ export default function DecksPage() {
           )}
 
           {!isLoading && decks && decks.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[14px]">
-              {decks.map((deck) => (
-                <DeckGridItem
-                  key={deck.id}
-                  deck={deck}
-                  onEdit={() => openEditModal(deck)}
-                  onDelete={() => setDeletingDeck(deck)}
-                />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[14px]">
+                {decks.map((deck) => (
+                  <DeckGridItem
+                    key={deck.id}
+                    deck={deck}
+                    onEdit={() => openEditModal(deck)}
+                    onDelete={() => setDeletingDeck(deck)}
+                  />
+                ))}
+              </div>
+
+              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+            </>
           )}
         </main>
       </div>

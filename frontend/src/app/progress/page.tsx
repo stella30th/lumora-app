@@ -30,7 +30,7 @@ export default function ProgressPage() {
     error,
   } = useQuery<PagedResponse<Deck>, Error>({
     queryKey: ["decks"],
-    queryFn: decksApi.getDecks,
+    queryFn: () => decksApi.getDecks(),
   });
   const decks = decksResponse?.content;
 

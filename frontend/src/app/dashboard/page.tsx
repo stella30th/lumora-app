@@ -52,7 +52,7 @@ export default function DashboardPage() {
     error: decksError,
   } = useQuery<PagedResponse<Deck>, Error>({
     queryKey: ["decks"],
-    queryFn: decksApi.getDecks,
+    queryFn: () => decksApi.getDecks(),
   });
   const decks = decksResponse?.content;
 
