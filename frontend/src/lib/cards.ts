@@ -2,8 +2,8 @@ import { apiClient } from "./api-client";
 import { Card, CardFormInput } from "@/types/card";
 import { PagedResponse } from "@/types/pagination";
 
-export function getCardsByDeck(deckId: number): Promise<PagedResponse<Card>> {
-  return apiClient<PagedResponse<Card>>(`/api/decks/${deckId}/cards`);
+export function getCardsByDeck(deckId: number, page = 0, size = 20): Promise<PagedResponse<Card>> {
+  return apiClient<PagedResponse<Card>>(`/api/decks/${deckId}/cards?page=${page}&size=${size}`);
 }
 
 export function createCard(deckId: number, input: CardFormInput): Promise<Card> {

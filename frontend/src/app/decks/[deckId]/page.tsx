@@ -13,6 +13,7 @@ import { CardFormModal } from "@/components/decks/CardFormModal";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ErrorBanner } from "@/components/shared/ErrorBanner";
+import { Pagination } from "@/components/shared/Pagination";
 import { isAuthenticated } from "@/lib/auth";
 import * as decksApi from "@/lib/decks";
 import * as cardsApi from "@/lib/cards";
@@ -25,12 +26,17 @@ export default function DeckDetailPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const deckId = Number(params?.deckId);
+  const [page, setPage] = useState(0);
 
   useEffect(() => {
     if (!isAuthenticated()) {
       router.replace("/login");
     }
   }, [router]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [deckId]);
 
   const {
     data: deck,
@@ -49,11 +55,12 @@ export default function DeckDetailPage() {
     isError: isCardsError,
     error: cardsError,
   } = useQuery<PagedResponse<Card>, Error>({
-    queryKey: ["cards", deckId],
-    queryFn: () => cardsApi.getCardsByDeck(deckId),
+    queryKey: ["cards", deckId, page],
+    queryFn: () => cardsApi.getCardsByDeck(deckId, page),
     enabled: Number.isFinite(deckId),
   });
   const cards = cardsResponse?.content;
+  const totalPages = cardsResponse?.page.totalPages ?? 0;
 
   const [isEditDeckOpen, setIsEditDeckOpen] = useState(false);
   const [cardFormOpen, setCardFormOpen] = useState(false);
@@ -97,6 +104,9 @@ export default function DeckDetailPage() {
     setDeleteCardError("");
     try {
       await cardsApi.deleteCard(deletingCard.id);
+      if (cards && cards.length === 1 && page > 0) {
+        setPage((p) => p - 1);
+      }
       await queryClient.invalidateQueries({ queryKey: ["cards", deckId] });
       await queryClient.invalidateQueries({ queryKey: ["review-queue", deckId] });
       await queryClient.invalidateQueries({ queryKey: ["review-queue"] });
@@ -183,16 +193,20 @@ export default function DeckDetailPage() {
               )}
 
               {!areCardsLoading && cards && cards.length > 0 && (
-                <div className="bg-lumora-surface border border-lumora-border rounded-card overflow-hidden">
-                  {cards.map((card) => (
-                    <CardRow
-                      key={card.id}
-                      card={card}
-                      onEdit={() => openEditCardModal(card)}
-                      onDelete={() => setDeletingCard(card)}
-                    />
-                  ))}
-                </div>
+                <>
+                  <div className="bg-lumora-surface border border-lumora-border rounded-card overflow-hidden">
+                    {cards.map((card) => (
+                      <CardRow
+                        key={card.id}
+                        card={card}
+                        onEdit={() => openEditCardModal(card)}
+                        onDelete={() => setDeletingCard(card)}
+                      />
+                    ))}
+                  </div>
+
+                  <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+                </>
               )}
             </>
           )}
