@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Folder } from "lucide-react";
 import { Deck } from "@/types/deck";
 import { formatRelativeTime } from "@/lib/format";
@@ -15,8 +15,25 @@ interface DeckCardProps {
 }
 
 export function DeckCard({ deck, cardCount, onEdit, onDelete }: DeckCardProps) {
+  const router = useRouter();
+
+  const goToDeck = () => {
+    router.push(`/decks/${deck.id}`);
+  };
+
   return (
-    <div className="group bg-lumora-surface border border-lumora-border rounded-card p-5 flex flex-col justify-between hover:bg-lumora-surface-hover transition-colors relative">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={goToDeck}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          goToDeck();
+        }
+      }}
+      className="group bg-lumora-surface border border-lumora-border rounded-card p-5 flex flex-col justify-between hover:bg-lumora-surface-hover transition-colors relative cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-lumora-primary/40"
+    >
       <div>
         <div className="flex items-start justify-between gap-2 mb-3">
           <div className="w-8 h-8 rounded-btn bg-lumora-bg border border-lumora-border flex items-center justify-center text-lumora-secondary group-hover:text-lumora-primary transition-colors">
@@ -33,12 +50,9 @@ export function DeckCard({ deck, cardCount, onEdit, onDelete }: DeckCardProps) {
           )}
         </div>
 
-        <Link
-          href={`/decks/${deck.id}`}
-          className="font-semibold text-card-heading text-lumora-primary hover:underline line-clamp-1"
-        >
+        <p className="font-semibold text-card-heading text-lumora-primary group-hover:underline line-clamp-1">
           {deck.name}
-        </Link>
+        </p>
         {deck.description && (
           <p className="text-body-default text-lumora-secondary line-clamp-2 mt-1">
             {deck.description}
