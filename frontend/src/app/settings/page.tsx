@@ -2,12 +2,14 @@
 
 import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { LogOut, User, Palette } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { ErrorBanner } from "@/components/shared/ErrorBanner";
+import { EditProfileForm } from "@/components/settings/EditProfileForm";
+import { ChangePasswordForm } from "@/components/settings/ChangePasswordForm";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { getUser, isAuthenticated } from "@/lib/auth";
 import { logoutAndClear } from "@/lib/api-client";
@@ -16,6 +18,7 @@ import { UserResponse } from "@/types/user";
 
 export default function SettingsPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { theme } = useTheme();
   const localUser = getUser();
 
@@ -58,28 +61,27 @@ export default function SettingsPage() {
             {isLoading ? (
               <p className="text-body-default text-lumora-secondary">Loading…</p>
             ) : (
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center justify-between gap-4">
-                  <span className="text-body-default text-lumora-secondary">Username</span>
-                  <span className="text-body-default font-medium text-lumora-primary">
-                    {user?.username || localUser?.username || "—"}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between gap-4">
-                  <span className="text-body-default text-lumora-secondary">Email</span>
-                  <span className="text-body-default font-medium text-lumora-primary">
-                    {user?.email || localUser?.email || "—"}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between gap-4">
-                  <span className="text-body-default text-lumora-secondary">Member since</span>
-                  <span className="text-body-default font-medium text-lumora-primary">
-                    {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : "—"}
-                  </span>
-                </div>
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-body-default text-lumora-secondary">Member since</span>
+                <span className="text-body-default font-medium text-lumora-primary">
+                  {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : "—"}
+                </span>
               </div>
             )}
           </section>
+
+          <EditProfileForm
+            user={user}
+            onUpdated={(updated) => {
+              // Prime the cache with the fresh values immediately instead
+              // of waiting on a refetch, then invalidate so any other
+              // component reading this same query key stays consistent.
+              queryClient.setQueryData(["users", localUser?.userId], updated);
+              queryClient.invalidateQueries({ queryKey: ["users", localUser?.userId] });
+            }}
+          />
+
+          <ChangePasswordForm />
 
           <section className="bg-lumora-surface border border-lumora-border rounded-card p-6 flex flex-col gap-4">
             <div className="flex items-center gap-2 text-lumora-secondary">

@@ -31,6 +31,9 @@ function LoginForm() {
     if (searchParams.get("registered") === "1") {
       setSuccessMessage("Account created successfully! Log in to continue.");
     }
+    if (searchParams.get("passwordChanged") === "1") {
+      setSuccessMessage("Password changed successfully. Please log in again.");
+    }
   }, [router, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {

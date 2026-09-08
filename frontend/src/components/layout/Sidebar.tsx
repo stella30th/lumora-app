@@ -32,6 +32,9 @@ export function Sidebar() {
 
   useEffect(() => {
     setUser(getUser());
+    const handleUserUpdated = () => setUser(getUser());
+    window.addEventListener("lumora-user-updated", handleUserUpdated);
+    return () => window.removeEventListener("lumora-user-updated", handleUserUpdated);
   }, []);
 
   const handleLogout = async () => {
