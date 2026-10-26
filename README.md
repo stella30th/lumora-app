@@ -1,4 +1,4 @@
-# Lumora
+# Lumora - Spaced Repetition Flashcards
 
 Lumora is a spaced-repetition flashcard web app. Users create decks, add cards, review due cards each day, and track their progress through statistics.
 
