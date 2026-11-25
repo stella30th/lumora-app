@@ -12,7 +12,14 @@ import { ErrorBanner } from "@/components/shared/ErrorBanner";
 import { isAuthenticated } from "@/lib/auth";
 import * as reviewApi from "@/lib/review";
 import * as decksApi from "@/lib/decks";
-import { DueCard } from "@/types/card";
+import { DueCard, ReviewRating } from "@/types/card";
+
+const RATING_BY_KEY: Record<string, ReviewRating> = {
+  "1": "AGAIN",
+  "2": "HARD",
+  "3": "GOOD",
+  "4": "EASY",
+};
 
 export default function StudySessionPage() {
   const router = useRouter();
@@ -51,8 +58,8 @@ export default function StudySessionPage() {
   }, [dueCards, queue]);
 
   const submitMutation = useMutation({
-    mutationFn: ({ cardId, correct }: { cardId: number; correct: boolean }) =>
-      reviewApi.submitReview(cardId, correct),
+    mutationFn: ({ cardId, rating }: { cardId: number; rating: ReviewRating }) =>
+      reviewApi.submitReview(cardId, rating),
   });
 
   const total = queue?.length ?? 0;
@@ -64,17 +71,22 @@ export default function StudySessionPage() {
   }, [current]);
 
   const handleAnswer = useCallback(
-    (correct: boolean) => {
+    (rating: ReviewRating) => {
       if (!current || submitMutation.isPending) return;
       submitMutation.mutate(
-        { cardId: current.id, correct },
+        { cardId: current.id, rating },
         {
           onSuccess: (result) => {
-            setFeedback(
-              `"${current.term}" saved — next review in ${result.intervalDays} day${
-                result.intervalDays === 1 ? "" : "s"
-              }.`
-            );
+            if (rating === "AGAIN") {
+              setQueue((q) => (q ? [...q, current] : q));
+              setFeedback(`"${current.term}" will come back at the end of this session.`);
+            } else {
+              setFeedback(
+                `"${current.term}" saved — next review in ${result.intervalDays} day${
+                  result.intervalDays === 1 ? "" : "s"
+                }.`
+              );
+            }
             setReviewedCount((c) => c + 1);
             setFlipped(false);
             setIndex((i) => i + 1);
@@ -91,10 +103,8 @@ export default function StudySessionPage() {
       if (e.code === "Space") {
         e.preventDefault();
         handleFlip();
-      } else if (flipped && e.key === "1") {
-        handleAnswer(false);
-      } else if (flipped && e.key === "2") {
-        handleAnswer(true);
+      } else if (flipped && e.key in RATING_BY_KEY) {
+        handleAnswer(RATING_BY_KEY[e.key]);
       }
     }
     window.addEventListener("keydown", onKeyDown);

@@ -13,6 +13,8 @@ export interface CardFormInput {
 
 export type ReviewStatus = "NEW" | "LEARNING" | "REVIEW";
 
+export type ReviewRating = "AGAIN" | "HARD" | "GOOD" | "EASY";
+
 export interface DueCard {
   id: number;
   term: string;
