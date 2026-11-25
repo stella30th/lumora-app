@@ -98,7 +98,7 @@ The app runs at `http://localhost:3000`.
 | Variable | Default | Description |
 | --- | --- | --- |
 | `PORT` | `8080` | Server port |
-| `JWT_SECRET` | dev value in `application.properties` | JWT signing key, at least 32 characters. Must be overridden in production |
+| `JWT_SECRET` | none (dev value in `application-dev.properties`, used only by `mvnw spring-boot:run`) | JWT signing key, at least 32 bytes. Required when running the jar/Docker image; the app refuses to start without it. Generate with `openssl rand -base64 64` |
 | `CORS_ALLOWED_ORIGINS` | `http://localhost:3000` | Comma-separated list of frontend origins allowed to call the API |
 
 Database connection settings and token lifetimes (access token 15 minutes, refresh token 7 days) live in `backend/src/main/resources/application.properties`. For production, override the database settings and do not use `spring.jpa.hibernate.ddl-auto=update`.
