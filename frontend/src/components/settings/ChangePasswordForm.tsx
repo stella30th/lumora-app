@@ -25,8 +25,8 @@ export function ChangePasswordForm() {
       setErrorMessage("Please fill in all fields.");
       return;
     }
-    if (newPassword.length < 6) {
-      setErrorMessage("New password must be at least 6 characters.");
+    if (newPassword.length < 8) {
+      setErrorMessage("New password must be at least 8 characters.");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -38,12 +38,6 @@ export function ChangePasswordForm() {
     try {
       await usersApi.changePassword({ currentPassword, newPassword });
 
-      // Changing the password revokes every refresh token for this user
-      // on the backend (see UserService#changePassword), so the refresh
-      // token we're holding is already dead. The short-lived access token
-      // would still work for a few minutes, but that's confusing UX — we
-      // log out immediately and send the user back to log in with the
-      // new password, same as any account-security flow should.
       clearAuth();
       router.push("/login?passwordChanged=1");
     } catch (err: unknown) {
@@ -87,7 +81,7 @@ export function ChangePasswordForm() {
             htmlFor="new-password"
             className="block text-caption-xs font-semibold uppercase tracking-wider text-lumora-secondary mb-1.5"
           >
-            New Password (min. 6 characters)
+            New Password (min. 8 characters)
           </label>
           <div className="relative">
             <input
@@ -95,7 +89,7 @@ export function ChangePasswordForm() {
               type={showPasswords ? "text" : "password"}
               autoComplete="new-password"
               required
-              minLength={6}
+              minLength={8}
               placeholder="••••••••"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}

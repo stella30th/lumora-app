@@ -13,7 +13,7 @@ import { ChangePasswordForm } from "@/components/settings/ChangePasswordForm";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { getUser, isAuthenticated } from "@/lib/auth";
 import { logoutAndClear } from "@/lib/api-client";
-import { getUserById } from "@/lib/users";
+import { getCurrentUser } from "@/lib/users";
 import { UserResponse } from "@/types/user";
 
 export default function SettingsPage() {
@@ -33,7 +33,7 @@ export default function SettingsPage() {
     error,
   } = useQuery<UserResponse, Error>({
     queryKey: ["users", localUser?.userId],
-    queryFn: () => getUserById(localUser!.userId),
+    queryFn: () => getCurrentUser(),
     enabled: !!localUser?.userId,
   });
 
@@ -73,9 +73,6 @@ export default function SettingsPage() {
           <EditProfileForm
             user={user}
             onUpdated={(updated) => {
-              // Prime the cache with the fresh values immediately instead
-              // of waiting on a refetch, then invalidate so any other
-              // component reading this same query key stays consistent.
               queryClient.setQueryData(["users", localUser?.userId], updated);
               queryClient.invalidateQueries({ queryKey: ["users", localUser?.userId] });
             }}

@@ -1,4 +1,4 @@
-import { getAccessToken, getRefreshToken, updateTokens, clearAuth } from "./auth";
+import { getAccessToken, updateAccessToken, clearAuth, getUser } from "./auth";
 import { LoginResponse } from "@/types/user";
 
 const API_BASE_URL =
@@ -12,12 +12,6 @@ let isRefreshing = false;
 let refreshPromise: Promise<string | null> | null = null;
 
 async function refreshAccessToken(): Promise<string | null> {
-  const refreshToken = getRefreshToken();
-  if (!refreshToken) {
-    clearAuth();
-    return null;
-  }
-
   if (isRefreshing && refreshPromise) {
     return refreshPromise;
   }
@@ -27,10 +21,7 @@ async function refreshAccessToken(): Promise<string | null> {
     try {
       const response = await fetch(`${API_BASE_URL}/api/users/refresh`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ refreshToken }),
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -38,7 +29,7 @@ async function refreshAccessToken(): Promise<string | null> {
       }
 
       const data: LoginResponse = await response.json();
-      updateTokens(data.token, data.refreshToken);
+      updateAccessToken(data.token);
       return data.token;
     } catch {
       clearAuth();
@@ -67,6 +58,10 @@ export async function apiClient<T = unknown>(
     ...(headers as Record<string, string>),
   };
 
+  if (!skipAuth && !getAccessToken() && getUser()) {
+    await refreshAccessToken();
+  }
+
   if (!skipAuth) {
     const token = getAccessToken();
     if (token) {
@@ -77,6 +72,7 @@ export async function apiClient<T = unknown>(
   let res = await fetch(url, {
     ...rest,
     headers: requestHeaders,
+    credentials: "include",
   });
 
   if (res.status === 401 && !skipAuth && !endpoint.includes("/api/users/refresh")) {
@@ -86,6 +82,7 @@ export async function apiClient<T = unknown>(
       res = await fetch(url, {
         ...rest,
         headers: requestHeaders,
+        credentials: "include",
       });
     }
   }
@@ -94,17 +91,18 @@ export async function apiClient<T = unknown>(
     let errorMessage = `HTTP error ${res.status}`;
     try {
       const errorBody = await res.json();
-      if (typeof errorBody.message === "string") {
+      const fieldMessages =
+        errorBody.errors && typeof errorBody.errors === "object"
+          ? Array.isArray(errorBody.errors)
+            ? errorBody.errors
+            : Object.values(errorBody.errors)
+          : [];
+      if (fieldMessages.length > 0) {
+        errorMessage = fieldMessages.join(", ");
+      } else if (typeof errorBody.message === "string") {
         errorMessage = errorBody.message;
       } else if (typeof errorBody.error === "string") {
         errorMessage = errorBody.error;
-      } else if (errorBody.errors && typeof errorBody.errors === "object") {
-        const fieldMessages = Array.isArray(errorBody.errors)
-          ? errorBody.errors
-          : Object.values(errorBody.errors);
-        if (fieldMessages.length > 0) {
-          errorMessage = fieldMessages.join(", ");
-        }
       }
     } catch {
     }

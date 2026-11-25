@@ -18,8 +18,6 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
       })
   );
 
-  // Let plain (non-React) modules - like lib/auth.ts - reach this same
-  // client to clear cached data when the logged-in user changes.
   useEffect(() => {
     registerQueryClient(queryClient);
   }, [queryClient]);

@@ -1,8 +1,8 @@
 import { apiClient } from "./api-client";
 import { UserResponse, UpdateProfileRequest, ChangePasswordRequest } from "@/types/user";
 
-export function getUserById(id: number): Promise<UserResponse> {
-  return apiClient<UserResponse>(`/api/users/${id}`);
+export function getCurrentUser(): Promise<UserResponse> {
+  return apiClient<UserResponse>("/api/users/me");
 }
 
 export function updateProfile(data: UpdateProfileRequest): Promise<UserResponse> {

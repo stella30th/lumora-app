@@ -35,8 +35,8 @@ export default function RegisterPage() {
       return;
     }
 
-    if (password.length < 6) {
-      setErrorMessage("Password must be at least 6 characters.");
+    if (password.length < 8) {
+      setErrorMessage("Password must be at least 8 characters.");
       return;
     }
 
@@ -70,7 +70,6 @@ export default function RegisterPage() {
 
         setAuth({
           token: loginData.token,
-          refreshToken: loginData.refreshToken,
           userId: loginData.userId,
           username: loginData.username,
           email: email.trim(),
@@ -158,14 +157,14 @@ export default function RegisterPage() {
               htmlFor="password"
               className="block text-caption-xs font-semibold uppercase tracking-wider text-lumora-secondary mb-1.5"
             >
-              Password (min. 6 characters)
+              Password (min. 8 characters)
             </label>
             <div className="relative">
               <input
                 id="password"
                 type={showPassword ? "text" : "password"}
                 required
-                minLength={6}
+                minLength={8}
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

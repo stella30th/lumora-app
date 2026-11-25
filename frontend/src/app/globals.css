@@ -3,7 +3,6 @@
 @tailwind utilities;
 
 :root {
-  /* Light mode tokens */
   --lumora-bg: #FFFFFF;
   --lumora-surface: #F7F7F7;
   --lumora-surface-hover: #EFEFEF;
@@ -18,7 +17,6 @@
 
 html.dark,
 :root.dark {
-  /* Dark mode tokens (Default) */
   --lumora-bg: #000000;
   --lumora-surface: #16181C;
   --lumora-surface-hover: #1D1F23;
@@ -45,7 +43,6 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Custom scrollbar for minimalist sleek feel */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;

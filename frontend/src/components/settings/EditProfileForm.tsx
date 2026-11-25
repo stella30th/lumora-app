@@ -19,8 +19,6 @@ export function EditProfileForm({ user, onUpdated }: EditProfileFormProps) {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  // Keep the form in sync whenever the loaded user changes (e.g. once the
-  // GET /api/users/{id} query resolves after the page first mounts).
   useEffect(() => {
     setUsername(user?.username ?? "");
     setEmail(user?.email ?? "");
@@ -50,9 +48,6 @@ export function EditProfileForm({ user, onUpdated }: EditProfileFormProps) {
         email: trimmedEmail,
       });
 
-      // The JWT access token only carries the user id, so nothing on the
-      // backend needs to change — we just patch the cached copy the UI
-      // reads from (see Sidebar) and let the caller refresh its query.
       updateLocalUser({ username: updated.username, email: updated.email });
       onUpdated(updated);
       setSuccessMessage("Profile updated.");

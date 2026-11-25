@@ -57,7 +57,6 @@ function LoginForm() {
 
       setAuth({
         token: response.token,
-        refreshToken: response.refreshToken,
         userId: response.userId,
         username: response.username,
         email: email.trim(),
