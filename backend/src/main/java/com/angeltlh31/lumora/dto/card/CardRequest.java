@@ -8,7 +8,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class CardRequest {
-
     @NotBlank(message = "Term is required")
     @Size(max = 255)
     private String term;

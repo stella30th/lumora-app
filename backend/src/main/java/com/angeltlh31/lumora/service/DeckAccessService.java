@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class DeckAccessService {
-
     public void verifyOwnership(Deck deck, Long userId) {
         if (!deck.getOwner().getId().equals(userId)) {
             throw new ForbiddenException(

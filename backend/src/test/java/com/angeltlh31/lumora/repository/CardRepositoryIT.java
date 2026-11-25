@@ -28,7 +28,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Testcontainers
 class CardRepositoryIT {
-
     @Container
     @ServiceConnection
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");

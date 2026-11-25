@@ -8,7 +8,6 @@ import java.util.List;
 @Getter
 @Builder
 public class ReviewStatsResponse {
-
     private int currentStreakDays;
     private int reviewsToday;
 

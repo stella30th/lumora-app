@@ -20,7 +20,6 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ProgressServiceTest {
-
     @Mock
     private ReviewLogRepository reviewLogRepository;
 
@@ -43,7 +42,6 @@ class ProgressServiceTest {
 
     @Test
     void calculateStreak_notReviewedTodayButReviewedYesterday_stillCountsUpToYesterday() {
-
         LocalDate today = LocalDate.now();
         List<LocalDate> datesDesc = List.of(
                 today.minusDays(1), today.minusDays(2));
@@ -53,7 +51,6 @@ class ProgressServiceTest {
 
     @Test
     void calculateStreak_gapInTheMiddle_stopsCountingAtTheGap() {
-
         LocalDate today = LocalDate.now();
         List<LocalDate> datesDesc = List.of(
                 today, today.minusDays(1), today.minusDays(4), today.minusDays(5));
@@ -63,7 +60,6 @@ class ProgressServiceTest {
 
     @Test
     void calculateStreak_missedTodayAndYesterday_isZero() {
-
         LocalDate today = LocalDate.now();
         List<LocalDate> datesDesc = List.of(today.minusDays(3), today.minusDays(4));
 

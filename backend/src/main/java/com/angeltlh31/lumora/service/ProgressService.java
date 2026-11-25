@@ -17,7 +17,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ProgressService {
-
     private static final int HISTORY_DAYS = 30;
 
     private final ReviewLogRepository reviewLogRepository;
@@ -57,10 +56,8 @@ public class ProgressService {
                 streak++;
                 cursor = cursor.minusDays(1);
             } else if (reviewDate.isBefore(cursor)) {
-
                 break;
             }
-
         }
         return streak;
     }
@@ -81,7 +78,6 @@ public class ProgressService {
             long count = (Long) row[2];
             int[] bucket = countsByDate.get(date);
             if (bucket == null) {
-
                 continue;
             }
             bucket[correct ? 0 : 1] += (int) count;

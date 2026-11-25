@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class Card {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

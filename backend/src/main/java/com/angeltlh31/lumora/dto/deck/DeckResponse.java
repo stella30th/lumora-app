@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 @Getter
 @Builder
 public class DeckResponse {
-
     private Long id;
     private String name;
     private String description;

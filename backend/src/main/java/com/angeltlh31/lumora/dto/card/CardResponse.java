@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 @Getter
 @Builder
 public class CardResponse {
-
     private Long id;
     private String term;
     private String definition;

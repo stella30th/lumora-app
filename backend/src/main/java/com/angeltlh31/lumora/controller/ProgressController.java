@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/progress")
 @RequiredArgsConstructor
 public class ProgressController {
-
     private final ProgressService progressService;
 
     @Operation(summary = "Thong ke on tap cua nguoi dung dang dang nhap: streak, so lan on hom nay, lich su 30 ngay")

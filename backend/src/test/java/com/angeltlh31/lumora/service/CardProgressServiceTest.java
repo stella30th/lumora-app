@@ -6,6 +6,7 @@ import com.angeltlh31.lumora.entity.Card;
 import com.angeltlh31.lumora.entity.CardProgress;
 import com.angeltlh31.lumora.entity.Deck;
 import com.angeltlh31.lumora.entity.ReviewLog;
+import com.angeltlh31.lumora.entity.ReviewRating;
 import com.angeltlh31.lumora.entity.ReviewStatus;
 import com.angeltlh31.lumora.entity.User;
 import com.angeltlh31.lumora.exception.ForbiddenException;
@@ -23,13 +24,16 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.LongStream;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
@@ -41,7 +45,6 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class CardProgressServiceTest {
-
     private static final double DELTA = 0.0001;
 
     @Mock
@@ -62,73 +65,93 @@ class CardProgressServiceTest {
     private CardProgressService service;
 
     @Test
-    void spacedRepetitionSixRoundSequence_matchesDesignTable() {
-
+    void mixedRatingSequence_matchesDesignTable() {
         CardProgress progress = CardProgress.builder().build();
 
-        service.applyReview(progress, true);
-        assertAll("Luot 1",
-                () -> assertEquals(1, progress.getRepetitions().intValue()),
-                () -> assertEquals(1, progress.getIntervalDays().intValue()),
-                () -> assertEquals(2.6, progress.getEaseFactor(), DELTA),
-                () -> assertEquals(ReviewStatus.LEARNING, progress.getStatus()),
-                () -> assertEquals(LocalDate.now().plusDays(1), progress.getNextReviewDate())
-        );
+        service.applyReview(progress, ReviewRating.GOOD);
+        assertState("Luot 1 GOOD", progress, 1, 1, 2.5, ReviewStatus.LEARNING);
 
-        service.applyReview(progress, true);
-        assertAll("Luot 2",
-                () -> assertEquals(2, progress.getRepetitions().intValue()),
-                () -> assertEquals(6, progress.getIntervalDays().intValue()),
-                () -> assertEquals(2.7, progress.getEaseFactor(), DELTA),
-                () -> assertEquals(ReviewStatus.REVIEW, progress.getStatus())
-        );
+        service.applyReview(progress, ReviewRating.GOOD);
+        assertState("Luot 2 GOOD", progress, 2, 6, 2.5, ReviewStatus.REVIEW);
 
-        service.applyReview(progress, true);
-        assertAll("Luot 3",
-                () -> assertEquals(3, progress.getRepetitions().intValue()),
-                () -> assertEquals(16, progress.getIntervalDays().intValue()),
-                () -> assertEquals(2.8, progress.getEaseFactor(), DELTA),
-                () -> assertEquals(ReviewStatus.REVIEW, progress.getStatus())
-        );
+        service.applyReview(progress, ReviewRating.GOOD);
+        assertState("Luot 3 GOOD: 6 x 2.5", progress, 3, 15, 2.5, ReviewStatus.REVIEW);
 
-        service.applyReview(progress, false);
-        assertAll("Luot 4",
-                () -> assertEquals(0, progress.getRepetitions().intValue()),
-                () -> assertEquals(1, progress.getIntervalDays().intValue()),
-                () -> assertEquals(2.0, progress.getEaseFactor(), DELTA),
-                () -> assertEquals(ReviewStatus.LEARNING, progress.getStatus())
-        );
+        service.applyReview(progress, ReviewRating.HARD);
+        assertState("Luot 4 HARD: 15 x 1.2", progress, 4, 18, 2.35, ReviewStatus.REVIEW);
 
-        service.applyReview(progress, true);
-        assertAll("Luot 5",
-                () -> assertEquals(1, progress.getRepetitions().intValue()),
-                () -> assertEquals(1, progress.getIntervalDays().intValue()),
-                () -> assertEquals(2.1, progress.getEaseFactor(), DELTA),
-                () -> assertEquals(ReviewStatus.LEARNING, progress.getStatus())
-        );
+        service.applyReview(progress, ReviewRating.EASY);
+        assertState("Luot 5 EASY: 18 x 2.35 x 1.3", progress, 5, 55, 2.5, ReviewStatus.REVIEW);
 
-        service.applyReview(progress, true);
-        assertAll("Luot 6",
-                () -> assertEquals(2, progress.getRepetitions().intValue()),
-                () -> assertEquals(6, progress.getIntervalDays().intValue()),
-                () -> assertEquals(2.2, progress.getEaseFactor(), DELTA),
-                () -> assertEquals(ReviewStatus.REVIEW, progress.getStatus())
-        );
+        service.applyReview(progress, ReviewRating.AGAIN);
+        assertState("Luot 6 AGAIN: on lai ngay hom nay", progress, 0, 0, 2.3, ReviewStatus.LEARNING);
+
+        service.applyReview(progress, ReviewRating.GOOD);
+        assertState("Luot 7 GOOD sau khi quen: hoc lai tu dau", progress, 1, 1, 2.3, ReviewStatus.LEARNING);
     }
 
     @Test
-    void easeFactor_neverGoesBelowMinimum_evenAfterManyWrongAnswersInARow() {
+    void good_doesNotChangeEase_soEaseNoLongerGrowsWithoutBound() {
+        CardProgress progress = CardProgress.builder().build();
 
-        CardProgress progress = CardProgress.builder().easeFactor(1.5).build();
+        for (int i = 0; i < 10; i++) {
+            service.applyReview(progress, ReviewRating.GOOD);
+        }
 
-        service.applyReview(progress, false);
-        assertEquals(1.3, progress.getEaseFactor(), DELTA);
+        assertEquals(2.5, progress.getEaseFactor(), DELTA);
+    }
 
-        service.applyReview(progress, false);
-        assertEquals(1.3, progress.getEaseFactor(), DELTA);
+    @Test
+    void easyRepeatedly_capsEaseAndInterval() {
+        CardProgress progress = CardProgress.builder().build();
 
-        service.applyReview(progress, false);
-        assertEquals(1.3, progress.getEaseFactor(), DELTA);
+        service.applyReview(progress, ReviewRating.EASY);
+        assertState("EASY lan 1", progress, 1, 4, 2.65, ReviewStatus.LEARNING);
+        service.applyReview(progress, ReviewRating.EASY);
+        assertState("EASY lan 2: 6 x 1.3", progress, 2, 8, 2.8, ReviewStatus.REVIEW);
+        service.applyReview(progress, ReviewRating.EASY);
+        assertState("EASY lan 3: 8 x 2.8 x 1.3", progress, 3, 29, 2.95, ReviewStatus.REVIEW);
+        service.applyReview(progress, ReviewRating.EASY);
+        assertState("EASY lan 4: ease cham tran 3.0", progress, 4, 111,
+                CardProgressService.MAX_EASE_FACTOR, ReviewStatus.REVIEW);
+        service.applyReview(progress, ReviewRating.EASY);
+        assertState("EASY lan 5: khoang cach cham tran 365", progress, 5,
+                CardProgressService.MAX_INTERVAL_DAYS, CardProgressService.MAX_EASE_FACTOR, ReviewStatus.REVIEW);
+    }
+
+    @Test
+    void hard_isLongerThanPreviousInterval_butNotLongerThanGood() {
+        CardProgress hard = CardProgress.builder().build();
+        CardProgress good = CardProgress.builder().build();
+        service.applyReview(hard, ReviewRating.GOOD);
+        service.applyReview(good, ReviewRating.GOOD);
+
+        service.applyReview(hard, ReviewRating.HARD);
+        service.applyReview(good, ReviewRating.GOOD);
+
+        assertEquals(2, hard.getIntervalDays().intValue());
+        assertTrue(hard.getIntervalDays() <= good.getIntervalDays());
+    }
+
+    @Test
+    void easeFactor_neverGoesBelowMinimum_evenAfterManyAgainInARow() {
+        CardProgress progress = CardProgress.builder().easeFactor(1.4).build();
+
+        service.applyReview(progress, ReviewRating.AGAIN);
+        assertEquals(CardProgressService.MIN_EASE_FACTOR, progress.getEaseFactor(), DELTA);
+
+        service.applyReview(progress, ReviewRating.AGAIN);
+        service.applyReview(progress, ReviewRating.HARD);
+        assertEquals(CardProgressService.MIN_EASE_FACTOR, progress.getEaseFactor(), DELTA);
+    }
+
+    private void assertState(String label, CardProgress p, int reps, int interval, double ease, ReviewStatus status) {
+        assertAll(label,
+                () -> assertEquals(reps, p.getRepetitions().intValue(), "repetitions"),
+                () -> assertEquals(interval, p.getIntervalDays().intValue(), "intervalDays"),
+                () -> assertEquals(ease, p.getEaseFactor(), DELTA, "easeFactor"),
+                () -> assertEquals(status, p.getStatus(), "status"),
+                () -> assertEquals(LocalDate.now().plusDays(interval), p.getNextReviewDate(), "nextReviewDate"));
     }
 
     @Test
@@ -156,12 +179,12 @@ class CardProgressServiceTest {
         when(cardProgressRepository.save(any(CardProgress.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        CardProgressResponse response = service.submitReview(cardId, userId, true);
+        CardProgressResponse response = service.submitReview(cardId, userId, ReviewRating.GOOD);
 
         assertAll("Response phan anh dung applyReview() cho 1 lan tra loi DUNG dau tien",
                 () -> assertEquals(1, response.getRepetitions()),
                 () -> assertEquals(1, response.getIntervalDays()),
-                () -> assertEquals(2.6, response.getEaseFactor(), DELTA),
+                () -> assertEquals(2.5, response.getEaseFactor(), DELTA),
                 () -> assertEquals(ReviewStatus.LEARNING, response.getStatus()),
                 () -> assertEquals(LocalDate.now().plusDays(1), response.getNextReviewDate())
         );
@@ -169,7 +192,10 @@ class CardProgressServiceTest {
         verify(deckAccessService).verifyReadAccess(deck, userId);
         verify(cardProgressRepository).save(existingProgress);
 
-        verify(reviewLogRepository).save(any(ReviewLog.class));
+        ArgumentCaptor<ReviewLog> logCaptor = ArgumentCaptor.forClass(ReviewLog.class);
+        verify(reviewLogRepository).save(logCaptor.capture());
+        assertEquals(ReviewRating.GOOD, logCaptor.getValue().getRating());
+        assertTrue(logCaptor.getValue().isCorrect());
 
         verify(userRepository, never()).findById(any());
     }
@@ -190,11 +216,11 @@ class CardProgressServiceTest {
         when(cardProgressRepository.save(any(CardProgress.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        CardProgressResponse response = service.submitReview(cardId, userId, true);
+        CardProgressResponse response = service.submitReview(cardId, userId, ReviewRating.GOOD);
 
         assertAll("The moi toanh, tra loi DUNG lan dau - giong het 'Luot 1' o test applyReview()",
                 () -> assertEquals(1, response.getRepetitions()),
-                () -> assertEquals(2.6, response.getEaseFactor(), DELTA),
+                () -> assertEquals(2.5, response.getEaseFactor(), DELTA),
                 () -> assertEquals(ReviewStatus.LEARNING, response.getStatus())
         );
 
@@ -211,7 +237,7 @@ class CardProgressServiceTest {
         when(cardRepository.findById(cardId)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class,
-                () -> service.submitReview(cardId, 1L, true));
+                () -> service.submitReview(cardId, 1L, ReviewRating.GOOD));
 
         verifyNoInteractions(deckAccessService, cardProgressRepository);
     }
@@ -230,7 +256,7 @@ class CardProgressServiceTest {
                 .when(deckAccessService).verifyReadAccess(deck, userId);
 
         assertThrows(ForbiddenException.class,
-                () -> service.submitReview(cardId, userId, true));
+                () -> service.submitReview(cardId, userId, ReviewRating.GOOD));
 
         verifyNoInteractions(cardProgressRepository);
     }
@@ -276,6 +302,55 @@ class CardProgressServiceTest {
                 () -> assertEquals(ReviewStatus.NEW, withoutProgress.getStatus()),
                 () -> assertNull(withoutProgress.getNextReviewDate())
         );
+    }
+
+    @Test
+    void getDueCards_limitsNewCardsToRemainingDailyQuota_butKeepsAllReviews() {
+        Long deckId = 7L;
+        Long userId = 1L;
+        User owner = User.builder().id(userId).build();
+        Deck deck = Deck.builder().id(deckId).owner(owner).isPublic(false).build();
+
+        List<Card> due = new ArrayList<>();
+        List<CardProgress> progresses = new ArrayList<>();
+        for (long id = 1; id <= 3; id++) {
+            Card card = Card.builder().id(id).deck(deck).term("r" + id).definition("d").build();
+            due.add(card);
+            progresses.add(CardProgress.builder().card(card).status(ReviewStatus.REVIEW)
+                    .nextReviewDate(LocalDate.now().minusDays(id)).build());
+        }
+        for (long id = 100; id < 125; id++) {
+            due.add(Card.builder().id(id).deck(deck).term("n" + id).definition("d").build());
+        }
+
+        when(deckRepository.findById(deckId)).thenReturn(Optional.of(deck));
+        when(cardRepository.findDueCards(eq(deckId), eq(userId), any(LocalDate.class))).thenReturn(due);
+        when(cardProgressRepository.findByUserIdAndCardIdIn(eq(userId), anyList())).thenReturn(progresses);
+        when(reviewLogRepository.findCardIdsFirstReviewedSince(eq(userId), eq(deckId), any()))
+                .thenReturn(LongStream.range(500, 515).boxed().toList());
+
+        List<DueCardResponse> result = service.getDueCards(deckId, userId);
+
+        assertEquals(3 + 5, result.size());
+        assertEquals(List.of(3L, 2L, 1L), result.subList(0, 3).stream().map(DueCardResponse::getId).toList(),
+                "The on lai dung truoc, qua han lau nhat len dau");
+        assertEquals(List.of(100L, 101L, 102L, 103L, 104L),
+                result.subList(3, 8).stream().map(DueCardResponse::getId).toList());
+    }
+
+    @Test
+    void getDueCards_dailyQuotaUsedUp_returnsNoNewCards() {
+        Long deckId = 8L;
+        User owner = User.builder().id(1L).build();
+        Deck deck = Deck.builder().id(deckId).owner(owner).isPublic(false).build();
+        Card newCard = Card.builder().id(1L).deck(deck).term("t").definition("d").build();
+
+        when(deckRepository.findById(deckId)).thenReturn(Optional.of(deck));
+        when(cardRepository.findDueCards(eq(deckId), eq(1L), any(LocalDate.class))).thenReturn(List.of(newCard));
+        when(reviewLogRepository.findCardIdsFirstReviewedSince(eq(1L), eq(deckId), any()))
+                .thenReturn(LongStream.range(0, 20).boxed().toList());
+
+        assertTrue(service.getDueCards(deckId, 1L).isEmpty());
     }
 
     @Test

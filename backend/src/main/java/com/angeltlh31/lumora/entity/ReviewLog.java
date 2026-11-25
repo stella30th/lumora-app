@@ -16,7 +16,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class ReviewLog {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -31,6 +30,10 @@ public class ReviewLog {
 
     @Column(nullable = false)
     private boolean correct;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 10)
+    private ReviewRating rating;
 
     @Column(name = "reviewed_at", nullable = false)
     private LocalDateTime reviewedAt;

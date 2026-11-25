@@ -16,18 +16,17 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 public class CardProgressController {
-
     private final CardProgressService cardProgressService;
 
-    @Operation(summary = "Nop ket qua on 1 Card (dung/sai) - cap nhat lich on tiep theo theo thuat toan spaced repetition")
+    @Operation(summary = "Nop ket qua on 1 Card (AGAIN/HARD/GOOD/EASY) - cap nhat lich on tiep theo theo thuat toan SM-2")
     @PostMapping("/api/cards/{cardId}/review")
     public ResponseEntity<CardProgressResponse> submitReview(@PathVariable Long cardId,
                                                                @AuthenticationPrincipal Long userId,
                                                                @Valid @RequestBody CardReviewRequest request) {
-        return ResponseEntity.ok(cardProgressService.submitReview(cardId, userId, request.isCorrect()));
+        return ResponseEntity.ok(cardProgressService.submitReview(cardId, userId, request.getRating()));
     }
 
-    @Operation(summary = "Lay danh sach Card can on hom nay trong 1 Deck (gom ca the chua tung on lan nao)")
+    @Operation(summary = "Lay hang doi on hom nay cua 1 Deck: moi the den han + toi da N the moi/ngay")
     @GetMapping("/api/decks/{deckId}/review-queue")
     public ResponseEntity<List<DueCardResponse>> getDueCards(@PathVariable Long deckId,
                                                                @AuthenticationPrincipal Long requesterId) {
