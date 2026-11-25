@@ -4,6 +4,7 @@ import com.angeltlh31.lumora.entity.Card;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -11,7 +12,6 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface CardRepository extends JpaRepository<Card, Long> {
-
     Page<Card> findByDeckId(Long deckId, Pageable pageable);
 
     @Query("""
@@ -23,4 +23,8 @@ public interface CardRepository extends JpaRepository<Card, Long> {
     List<Card> findDueCards(@Param("deckId") Long deckId,
                              @Param("userId") Long userId,
                              @Param("today") LocalDate today);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("DELETE FROM Card c WHERE c.deck.id = :deckId")
+    int deleteByDeckId(@Param("deckId") Long deckId);
 }

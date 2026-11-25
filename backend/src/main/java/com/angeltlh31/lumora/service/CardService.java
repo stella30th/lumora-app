@@ -5,8 +5,10 @@ import com.angeltlh31.lumora.dto.card.CardResponse;
 import com.angeltlh31.lumora.entity.Card;
 import com.angeltlh31.lumora.entity.Deck;
 import com.angeltlh31.lumora.exception.ResourceNotFoundException;
+import com.angeltlh31.lumora.repository.CardProgressRepository;
 import com.angeltlh31.lumora.repository.CardRepository;
 import com.angeltlh31.lumora.repository.DeckRepository;
+import com.angeltlh31.lumora.repository.ReviewLogRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,9 +19,10 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional
 public class CardService {
-
     private final CardRepository cardRepository;
     private final DeckRepository deckRepository;
+    private final CardProgressRepository cardProgressRepository;
+    private final ReviewLogRepository reviewLogRepository;
 
     private final DeckAccessService deckAccessService;
 
@@ -67,7 +70,10 @@ public class CardService {
     public void deleteCard(Long id, Long ownerId) {
         Card card = findCardOrThrow(id);
         deckAccessService.verifyOwnership(card.getDeck(), ownerId);
-        cardRepository.delete(card);
+
+        reviewLogRepository.deleteByCardId(id);
+        cardProgressRepository.deleteByCardId(id);
+        cardRepository.deleteById(id);
     }
 
     private Card findCardOrThrow(Long id) {

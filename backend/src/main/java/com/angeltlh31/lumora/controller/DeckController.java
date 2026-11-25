@@ -15,13 +15,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/decks")
 @RequiredArgsConstructor
 public class DeckController {
-
     private final DeckService deckService;
 
     @Operation(summary = "Tao Deck moi cho user dang dang nhap")
@@ -42,8 +39,8 @@ public class DeckController {
 
     @Operation(summary = "Lay danh sach Deck cong khai (khong loc theo chu so huu)")
     @GetMapping("/public")
-    public ResponseEntity<List<DeckResponse>> getPublicDecks() {
-        return ResponseEntity.ok(deckService.getPublicDecks());
+    public ResponseEntity<PagedModel<DeckResponse>> getPublicDecks(@PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(new PagedModel<>(deckService.getPublicDecks(pageable)));
     }
 
     @Operation(summary = "Xem chi tiet 1 Deck (yeu cau Deck public hoac la chu so huu)")

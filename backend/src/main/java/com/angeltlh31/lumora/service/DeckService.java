@@ -5,7 +5,10 @@ import com.angeltlh31.lumora.dto.deck.DeckResponse;
 import com.angeltlh31.lumora.entity.Deck;
 import com.angeltlh31.lumora.entity.User;
 import com.angeltlh31.lumora.exception.ResourceNotFoundException;
+import com.angeltlh31.lumora.repository.CardProgressRepository;
+import com.angeltlh31.lumora.repository.CardRepository;
 import com.angeltlh31.lumora.repository.DeckRepository;
+import com.angeltlh31.lumora.repository.ReviewLogRepository;
 import com.angeltlh31.lumora.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -13,15 +16,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class DeckService {
-
     private final DeckRepository deckRepository;
     private final UserRepository userRepository;
+    private final CardRepository cardRepository;
+    private final CardProgressRepository cardProgressRepository;
+    private final ReviewLogRepository reviewLogRepository;
 
     private final DeckAccessService deckAccessService;
 
@@ -46,11 +49,9 @@ public class DeckService {
     }
 
     @Transactional(readOnly = true)
-    public List<DeckResponse> getPublicDecks() {
-        return deckRepository.findByIsPublicTrue()
-                .stream()
-                .map(this::toResponse)
-                .toList();
+    public Page<DeckResponse> getPublicDecks(Pageable pageable) {
+        return deckRepository.findByIsPublicTrue(pageable)
+                .map(this::toResponse);
     }
 
     @Transactional(readOnly = true)
@@ -74,7 +75,11 @@ public class DeckService {
     public void deleteDeck(Long id, Long ownerId) {
         Deck deck = findDeckOrThrow(id);
         deckAccessService.verifyOwnership(deck, ownerId);
-        deckRepository.delete(deck);
+
+        reviewLogRepository.deleteByDeckId(id);
+        cardProgressRepository.deleteByDeckId(id);
+        cardRepository.deleteByDeckId(id);
+        deckRepository.deleteById(id);
     }
 
     private Deck findDeckOrThrow(Long id) {
