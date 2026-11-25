@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class RefreshToken {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -31,6 +30,9 @@ public class RefreshToken {
     @Column(nullable = false)
     @Builder.Default
     private boolean revoked = false;
+
+    @Column(name = "rotated_at")
+    private LocalDateTime rotatedAt;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

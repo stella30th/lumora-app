@@ -10,6 +10,7 @@ import com.angeltlh31.lumora.entity.RefreshToken;
 import com.angeltlh31.lumora.entity.User;
 import com.angeltlh31.lumora.exception.DuplicateResourceException;
 import com.angeltlh31.lumora.exception.InvalidCredentialException;
+import com.angeltlh31.lumora.exception.InvalidRefreshTokenException;
 import com.angeltlh31.lumora.exception.ResourceNotFoundException;
 import com.angeltlh31.lumora.repository.UserRepository;
 import com.angeltlh31.lumora.security.JwtService;
@@ -22,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional
 public class UserService {
-
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
@@ -47,8 +47,10 @@ public class UserService {
         return toResponse(userRepository.save(user));
     }
 
-    public LoginResponse login(LoginRequest request) {
+    public record AuthResult(LoginResponse body, String rawRefreshToken) {
+    }
 
+    public AuthResult login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new InvalidCredentialException("Invalid email or password"));
 
@@ -59,17 +61,23 @@ public class UserService {
         return issueTokenPair(user);
     }
 
-    public LoginResponse refreshAccessToken(String rawRefreshToken) {
+    @Transactional(noRollbackFor = InvalidRefreshTokenException.class)
+    public AuthResult refreshAccessToken(String rawRefreshToken) {
         RefreshToken oldToken = refreshTokenService.verifyAndGet(rawRefreshToken);
         User user = oldToken.getUser();
 
-        refreshTokenService.revoke(oldToken);
+        refreshTokenService.markRotated(oldToken);
 
         return issueTokenPair(user);
     }
 
     public void logout(Long userId) {
+        revokeAllSessions(userId);
+    }
+
+    private void revokeAllSessions(Long userId) {
         refreshTokenService.revokeAllForUser(userId);
+        userRepository.incrementTokenVersion(userId);
     }
 
     @Transactional(readOnly = true)
@@ -107,19 +115,19 @@ public class UserService {
         user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
 
-        refreshTokenService.revokeAllForUser(userId);
+        revokeAllSessions(userId);
     }
 
-    private LoginResponse issueTokenPair(User user) {
-        String accessToken = jwtService.generateToken(user.getId(), user.getUsername());
-        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
+    private AuthResult issueTokenPair(User user) {
+        String accessToken = jwtService.generateToken(user.getId(), user.getTokenVersion());
+        RefreshTokenService.IssuedRefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
 
-        return LoginResponse.builder()
+        LoginResponse body = LoginResponse.builder()
                 .token(accessToken)
-                .refreshToken(refreshToken.getToken())
                 .userId(user.getId())
                 .username(user.getUsername())
                 .build();
+        return new AuthResult(body, refreshToken.rawToken());
     }
 
     private UserResponse toResponse(User user) {

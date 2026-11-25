@@ -1,9 +1,11 @@
 package com.angeltlh31.lumora.controller;
 
+import com.angeltlh31.lumora.exception.InvalidRefreshTokenException;
+import com.angeltlh31.lumora.security.RefreshTokenCookie;
+import org.springframework.http.HttpHeaders;
 import com.angeltlh31.lumora.dto.user.ChangePasswordRequest;
 import com.angeltlh31.lumora.dto.user.LoginRequest;
 import com.angeltlh31.lumora.dto.user.LoginResponse;
-import com.angeltlh31.lumora.dto.user.RefreshTokenRequest;
 import com.angeltlh31.lumora.dto.user.UpdateProfileRequest;
 import com.angeltlh31.lumora.dto.user.UserRegisterRequest;
 import com.angeltlh31.lumora.dto.user.UserResponse;
@@ -20,8 +22,8 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
 public class UserController {
-
     private final UserService userService;
+    private final RefreshTokenCookie refreshTokenCookie;
 
     @Operation(summary = "Dang ky user moi", security = {})
     @PostMapping("/register")
@@ -30,30 +32,43 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @Operation(summary = "Dang nhap, tra ve access token (JWT) + refresh token", security = {})
+    @Operation(summary = "Dang nhap, tra ve access token (JWT) trong body + refresh token trong cookie httpOnly",
+            security = {})
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(userService.login(request));
+        return withRefreshCookie(userService.login(request));
     }
 
-    @Operation(summary = "Doi refresh token con hop le lay 1 cap access+refresh token moi",
+    @Operation(summary = "Doi refresh token (doc tu cookie httpOnly) lay access token moi + xoay vong refresh token",
             security = {})
     @PostMapping("/refresh")
-    public ResponseEntity<LoginResponse> refresh(@Valid @RequestBody RefreshTokenRequest request) {
-        return ResponseEntity.ok(userService.refreshAccessToken(request.getRefreshToken()));
+    public ResponseEntity<LoginResponse> refresh(
+            @CookieValue(name = RefreshTokenCookie.NAME, required = false) String rawRefreshToken) {
+        if (rawRefreshToken == null || rawRefreshToken.isBlank()) {
+            throw new InvalidRefreshTokenException("Missing refresh token - please login again");
+        }
+        return withRefreshCookie(userService.refreshAccessToken(rawRefreshToken));
     }
 
-    @Operation(summary = "Dang xuat - thu hoi toan bo refresh token cua user dang dang nhap")
+    @Operation(summary = "Dang xuat - thu hoi toan bo refresh token cua user dang dang nhap va xoa cookie")
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(@AuthenticationPrincipal Long userId) {
         userService.logout(userId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.noContent()
+                .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.clear().toString())
+                .build();
     }
 
-    @Operation(summary = "Xem thong tin user theo id")
-    @GetMapping("/{id}")
-    public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
-        return ResponseEntity.ok(userService.getUserById(id));
+    private ResponseEntity<LoginResponse> withRefreshCookie(UserService.AuthResult result) {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.create(result.rawRefreshToken()).toString())
+                .body(result.body());
+    }
+
+    @Operation(summary = "Xem thong tin cua chinh user dang dang nhap")
+    @GetMapping("/me")
+    public ResponseEntity<UserResponse> getCurrentUser(@AuthenticationPrincipal Long userId) {
+        return ResponseEntity.ok(userService.getUserById(userId));
     }
 
     @Operation(summary = "Cap nhat username/email cua chinh user dang dang nhap")
