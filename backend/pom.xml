@@ -4,9 +4,6 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <!-- Tuong duong plugin 'org.springframework.boot' + 'io.spring.dependency-management' ben Gradle:
-         parent nay tu dong quan ly version cua tat ca starter/dependency Spring Boot ben duoi,
-         khong can khai bao version cho tung dependency. -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
@@ -25,7 +22,7 @@
     </properties>
 
     <dependencies>
-        <!-- implementation -->
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -43,17 +40,21 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
-        <!-- springdoc-openapi: doc annotation tren Controller/DTO -> tu sinh OpenAPI spec (/v3/api-docs)
-             + Swagger UI (/swagger-ui.html) de test API tren trinh duyet. Ban 3.x tuong thich Spring
-             Boot 4.x (ban 2.x chi cho Spring Boot 3.x). -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-flyway</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>3.1.0</version>
         </dependency>
 
-        <!-- Thu vien tao/doc JWT. jjwt-api = interface dung luc compile,
-             jjwt-impl + jjwt-jackson chi can luc runtime (impl thuc te + serialize claims sang JSON). -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
@@ -72,16 +73,12 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- compileOnly + annotationProcessor (Gradle) => 1 dependency scope "provided" (Maven)
-             vi provided co mat o ca compile lan test classpath, annotation processor
-             duoc maven-compiler-plugin tu dong lay tu day, khong can khai bao rieng. -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
         </dependency>
 
-        <!-- developmentOnly -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
@@ -89,14 +86,12 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- runtimeOnly -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
 
-        <!-- testImplementation -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa-test</artifactId>
@@ -113,11 +108,6 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Ngay 16: Testcontainers - cho phep test khoi 1 container Docker THAT (Postgres)
-             chi song trong luc chay test, thay vi mock/H2. Ca 3 dependency duoi day deu KHONG
-             ghi <version> - spring-boot-starter-parent (dependencyManagement cua no) da quan ly
-             san version tuong thich cho ca 3, giong het cach spring-boot-starter-data-jpa o tren
-             khong can ghi version. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-testcontainers</artifactId>
@@ -134,7 +124,6 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- testRuntimeOnly -->
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-launcher</artifactId>
@@ -147,16 +136,14 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+
+                    <profiles>
+                        <profile>dev</profile>
+                    </profiles>
+                </configuration>
             </plugin>
 
-            <!-- Ngay 16: maven-failsafe-plugin - "anh em" cua maven-surefire-plugin (plugin
-                 chay `./mvnw test`, quet *Test.java), nhung quet rieng file *IT.java va chay o
-                 goal `integration-test` + `verify` (2 buoc SAU `test` trong vong doi Maven).
-                 Khong ghi <version> - spring-boot-starter-parent da quan ly san (giong cach
-                 khong can ghi version cho cac starter dependency o tren).
-                 Ket qua: `./mvnw test` KHONG dung Docker, chi chay unit test (Ngay 13-15), rat
-                 nhanh; `./mvnw verify` chay CA `test` LAN cac file *IT.java (Ngay 16 tro di),
-                 can Docker dang mo, cham hon vi phai khoi container that. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
