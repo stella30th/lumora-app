@@ -9,12 +9,12 @@ import lombok.Setter;
 @Getter
 @Setter
 public class UpdateProfileRequest {
-
     @NotBlank(message = "Username is required")
-    @Size(max = 50)
+    @Size(min = 3, max = 50, message = "Username must be 3-50 characters")
     private String username;
 
     @NotBlank(message = "Email is required")
     @Email(message = "Invalid email format")
+    @Size(max = 255)
     private String email;
 }

@@ -3,6 +3,7 @@ package com.angeltlh31.lumora.config;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.annotation.Profile;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 
@@ -12,8 +13,8 @@ import java.net.URI;
 
 @Slf4j
 @Component
+@Profile("dev")
 public class SwaggerAutoLauncher implements ApplicationListener<ApplicationReadyEvent> {
-
     private static final String ALREADY_OPENED_FLAG = "lumora.swagger.browser.opened";
 
     @Value("${server.port:8080}")
@@ -21,7 +22,6 @@ public class SwaggerAutoLauncher implements ApplicationListener<ApplicationReady
 
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
-
         if (System.getProperty(ALREADY_OPENED_FLAG) != null) {
             return;
         }
@@ -37,7 +37,6 @@ public class SwaggerAutoLauncher implements ApplicationListener<ApplicationReady
             Desktop.getDesktop().browse(new URI(url));
             log.info("Da tu dong mo Swagger UI tai {}", url);
         } catch (Exception ex) {
-
             log.warn("Khong the tu dong mo trinh duyet toi {}: {}", url, ex.getMessage());
         }
     }
