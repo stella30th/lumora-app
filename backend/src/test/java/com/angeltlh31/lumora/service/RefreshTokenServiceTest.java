@@ -5,6 +5,7 @@ import com.angeltlh31.lumora.entity.User;
 import com.angeltlh31.lumora.exception.InvalidRefreshTokenException;
 import com.angeltlh31.lumora.repository.RefreshTokenRepository;
 import com.angeltlh31.lumora.repository.UserRepository;
+import com.angeltlh31.lumora.security.TokenHasher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,19 +50,19 @@ class RefreshTokenServiceTest {
     void createRefreshToken_storesHashNotRawToken() {
         when(refreshTokenRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        RefreshTokenService.IssuedRefreshToken issued = refreshTokenService.createRefreshToken(user);
+        String rawToken = refreshTokenService.createRefreshToken(user);
 
         ArgumentCaptor<RefreshToken> saved = ArgumentCaptor.forClass(RefreshToken.class);
         verify(refreshTokenRepository).save(saved.capture());
-        assertNotEquals(issued.rawToken(), saved.getValue().getToken());
-        assertEquals(RefreshTokenService.hash(issued.rawToken()), saved.getValue().getToken());
+        assertNotEquals(rawToken, saved.getValue().getToken());
+        assertEquals(TokenHasher.sha256(rawToken), saved.getValue().getToken());
         assertEquals(64, saved.getValue().getToken().length());
     }
 
     @Test
     void verifyAndGet_validToken_looksUpByHash() {
         RefreshToken stored = token(false, LocalDateTime.now().plusDays(1));
-        when(refreshTokenRepository.findByToken(RefreshTokenService.hash("raw"))).thenReturn(Optional.of(stored));
+        when(refreshTokenRepository.findByToken(TokenHasher.sha256("raw"))).thenReturn(Optional.of(stored));
 
         assertSame(stored, refreshTokenService.verifyAndGet("raw"));
         verify(refreshTokenRepository, never()).revokeAllByUserId(any());
@@ -70,7 +71,7 @@ class RefreshTokenServiceTest {
     @Test
     void verifyAndGet_tokenRevokedByLogout_isTreatedAsReuse_revokesEverything() {
         RefreshToken reused = token(true, LocalDateTime.now().plusDays(1));
-        when(refreshTokenRepository.findByToken(RefreshTokenService.hash("stolen"))).thenReturn(Optional.of(reused));
+        when(refreshTokenRepository.findByToken(TokenHasher.sha256("stolen"))).thenReturn(Optional.of(reused));
 
         assertThrows(InvalidRefreshTokenException.class, () -> refreshTokenService.verifyAndGet("stolen"));
 

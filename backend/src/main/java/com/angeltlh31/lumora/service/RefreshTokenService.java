@@ -5,20 +5,15 @@ import com.angeltlh31.lumora.entity.User;
 import com.angeltlh31.lumora.exception.InvalidRefreshTokenException;
 import com.angeltlh31.lumora.repository.RefreshTokenRepository;
 import com.angeltlh31.lumora.repository.UserRepository;
+import com.angeltlh31.lumora.security.TokenHasher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Base64;
-import java.util.HexFormat;
 
 @Slf4j
 @Service
@@ -31,27 +26,21 @@ public class RefreshTokenService {
     @Value("${jwt.refresh-expiration-ms}")
     private long refreshExpirationMs;
 
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
-
     static final Duration ROTATION_GRACE_PERIOD = Duration.ofSeconds(30);
 
-    public record IssuedRefreshToken(RefreshToken entity, String rawToken) {
-    }
-
-    public IssuedRefreshToken createRefreshToken(User user) {
-        String rawToken = generateSecureToken();
-        RefreshToken refreshToken = RefreshToken.builder()
+    public String createRefreshToken(User user) {
+        String rawToken = TokenHasher.newRawToken();
+        refreshTokenRepository.save(RefreshToken.builder()
                 .user(user)
-
-                .token(hash(rawToken))
+                .token(TokenHasher.sha256(rawToken))
                 .expiresAt(LocalDateTime.now().plus(Duration.ofMillis(refreshExpirationMs)))
-                .build();
-        return new IssuedRefreshToken(refreshTokenRepository.save(refreshToken), rawToken);
+                .build());
+        return rawToken;
     }
 
     @Transactional(noRollbackFor = InvalidRefreshTokenException.class)
     public RefreshToken verifyAndGet(String rawToken) {
-        RefreshToken refreshToken = refreshTokenRepository.findByToken(hash(rawToken))
+        RefreshToken refreshToken = refreshTokenRepository.findByToken(TokenHasher.sha256(rawToken))
                 .orElseThrow(() -> new InvalidRefreshTokenException("Invalid refresh token"));
 
         if (refreshToken.isRevoked() && !isWithinRotationGrace(refreshToken)) {
@@ -84,21 +73,5 @@ public class RefreshTokenService {
     private boolean isWithinRotationGrace(RefreshToken token) {
         return token.getRotatedAt() != null
                 && token.getRotatedAt().isAfter(LocalDateTime.now().minus(ROTATION_GRACE_PERIOD));
-    }
-
-    static String hash(String rawToken) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hashed = digest.digest(rawToken.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(hashed);
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 not available", e);
-        }
-    }
-
-    private String generateSecureToken() {
-        byte[] randomBytes = new byte[32];
-        SECURE_RANDOM.nextBytes(randomBytes);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
     }
 }

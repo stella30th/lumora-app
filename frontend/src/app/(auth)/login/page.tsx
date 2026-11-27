@@ -28,9 +28,6 @@ function LoginForm() {
     if (searchParams.get("passwordChanged") === "1") {
       return "Password changed successfully. Please log in again.";
     }
-    if (searchParams.get("registered") === "1") {
-      return "Account created successfully! Log in to continue.";
-    }
     return "";
   });
 

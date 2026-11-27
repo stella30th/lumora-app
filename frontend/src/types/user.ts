@@ -1,18 +1,7 @@
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
 export interface LoginResponse {
   token: string;
   userId: number;
   username: string;
-}
-
-export interface UserRegisterRequest {
-  username: string;
-  email: string;
-  password: string;
 }
 
 export interface MessageResponse {

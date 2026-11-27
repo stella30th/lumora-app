@@ -215,14 +215,14 @@ public class UserService {
 
     private AuthResult issueTokenPair(User user) {
         String accessToken = jwtService.generateToken(user.getId(), user.getTokenVersion());
-        RefreshTokenService.IssuedRefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
+        String rawRefreshToken = refreshTokenService.createRefreshToken(user);
 
         LoginResponse body = LoginResponse.builder()
                 .token(accessToken)
                 .userId(user.getId())
                 .username(user.getUsername())
                 .build();
-        return new AuthResult(body, refreshToken.rawToken());
+        return new AuthResult(body, rawRefreshToken);
     }
 
     private UserResponse toResponse(User user) {
