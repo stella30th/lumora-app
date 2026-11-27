@@ -1,5 +1,6 @@
 package com.angeltlh31.lumora.controller;
 
+import com.angeltlh31.lumora.dto.deck.DeckOverviewResponse;
 import com.angeltlh31.lumora.dto.deck.DeckRequest;
 import com.angeltlh31.lumora.dto.deck.DeckResponse;
 import com.angeltlh31.lumora.service.DeckService;
@@ -14,6 +15,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/decks")
@@ -35,6 +38,12 @@ public class DeckController {
                                                                 @PageableDefault(size = 20) Pageable pageable) {
         Page<DeckResponse> page = deckService.getDecksByOwner(ownerId, pageable);
         return ResponseEntity.ok(new PagedModel<>(page));
+    }
+
+    @Operation(summary = "Tong quan MOI deck cua user: so the va so the can on hom nay (tinh ca han muc the moi)")
+    @GetMapping("/overview")
+    public ResponseEntity<List<DeckOverviewResponse>> getOverview(@AuthenticationPrincipal Long ownerId) {
+        return ResponseEntity.ok(deckService.getOverview(ownerId));
     }
 
     @Operation(summary = "Lay danh sach Deck cong khai (khong loc theo chu so huu)")

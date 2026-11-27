@@ -24,6 +24,9 @@ public interface CardRepository extends JpaRepository<Card, Long> {
                              @Param("userId") Long userId,
                              @Param("today") LocalDate today);
 
+    @Query("SELECT c.deck.id, COUNT(c) FROM Card c WHERE c.deck.owner.id = :ownerId GROUP BY c.deck.id")
+    List<Object[]> countCardsPerDeckOfOwner(@Param("ownerId") Long ownerId);
+
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("DELETE FROM Card c WHERE c.deck.id = :deckId")
     int deleteByDeckId(@Param("deckId") Long deckId);

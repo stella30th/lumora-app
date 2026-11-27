@@ -1,5 +1,6 @@
 package com.angeltlh31.lumora.dto.deck;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -15,5 +16,6 @@ public class DeckRequest {
     @Size(max = 500)
     private String description;
 
+    @JsonProperty("isPublic")
     private boolean isPublic;
 }

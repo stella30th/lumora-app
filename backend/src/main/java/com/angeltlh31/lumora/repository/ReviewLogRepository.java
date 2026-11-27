@@ -11,13 +11,13 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface ReviewLogRepository extends JpaRepository<ReviewLog, Long> {
-    @Query("SELECT DISTINCT CAST(r.reviewedAt AS date) FROM ReviewLog r " +
+    @Query("SELECT DISTINCT CAST(r.reviewedAt AS LocalDate) FROM ReviewLog r " +
             "WHERE r.user.id = :userId ORDER BY 1 DESC")
     List<LocalDate> findDistinctReviewDatesByUserId(@Param("userId") Long userId);
 
-    @Query("SELECT CAST(r.reviewedAt AS date), r.correct, COUNT(r) FROM ReviewLog r " +
+    @Query("SELECT CAST(r.reviewedAt AS LocalDate), r.correct, COUNT(r) FROM ReviewLog r " +
             "WHERE r.user.id = :userId AND r.reviewedAt >= :since " +
-            "GROUP BY CAST(r.reviewedAt AS date), r.correct")
+            "GROUP BY CAST(r.reviewedAt AS LocalDate), r.correct")
     List<Object[]> countGroupedByDateAndCorrect(@Param("userId") Long userId,
                                                  @Param("since") LocalDateTime since);
 
@@ -27,6 +27,12 @@ public interface ReviewLogRepository extends JpaRepository<ReviewLog, Long> {
     List<Long> findCardIdsFirstReviewedSince(@Param("userId") Long userId,
                                              @Param("deckId") Long deckId,
                                              @Param("since") LocalDateTime since);
+
+    @Query("SELECT r.card.deck.id, r.card.id FROM ReviewLog r " +
+            "WHERE r.user.id = :userId AND r.card.deck.owner.id = :userId " +
+            "GROUP BY r.card.deck.id, r.card.id HAVING MIN(r.reviewedAt) >= :since")
+    List<Object[]> findCardsFirstReviewedSinceInOwnDecks(@Param("userId") Long userId,
+                                                          @Param("since") LocalDateTime since);
 
     long countByUserIdAndReviewedAtBetween(Long userId, LocalDateTime start, LocalDateTime end);
 
