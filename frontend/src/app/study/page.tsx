@@ -11,8 +11,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { ErrorBanner } from "@/components/shared/ErrorBanner";
 import { isAuthenticated } from "@/lib/auth";
 import * as decksApi from "@/lib/decks";
-import { Deck } from "@/types/deck";
-import { PagedResponse } from "@/types/pagination";
+import { DeckOverview } from "@/types/deck";
 
 export default function StudyDeckPickerPage() {
   const router = useRouter();
@@ -22,15 +21,14 @@ export default function StudyDeckPickerPage() {
   }, [router]);
 
   const {
-    data: decksResponse,
+    data: decks,
     isLoading,
     isError,
     error,
-  } = useQuery<PagedResponse<Deck>, Error>({
-    queryKey: ["decks"],
-    queryFn: () => decksApi.getDecks(),
+  } = useQuery<DeckOverview[], Error>({
+    queryKey: decksApi.DECK_OVERVIEW_QUERY_KEY,
+    queryFn: decksApi.getDeckOverview,
   });
-  const decks = decksResponse?.content;
 
   return (
     <div className="min-h-screen flex bg-lumora-bg text-lumora-primary">
@@ -68,7 +66,11 @@ export default function StudyDeckPickerPage() {
                   <span className="text-card-heading font-semibold text-lumora-primary truncate">
                     {deck.name}
                   </span>
-                  <span className="text-caption-xs text-lumora-muted">Tap to study this deck</span>
+                  <span className="text-caption-xs text-lumora-muted">
+                    {deck.dueCount > 0
+                      ? `${deck.dueCount} card${deck.dueCount === 1 ? "" : "s"} to review`
+                      : "Nothing due right now"}
+                  </span>
                 </Link>
               ))}
             </div>

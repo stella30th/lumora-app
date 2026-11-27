@@ -7,6 +7,11 @@ export interface Deck {
   createdAt: string;
 }
 
+export interface DeckOverview extends Deck {
+  cardCount: number;
+  dueCount: number;
+}
+
 export interface DeckFormInput {
   name: string;
   description?: string;

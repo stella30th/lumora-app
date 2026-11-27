@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useQueries, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Layers, CreditCard, Clock, Flame, ArrowRight, Plus } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
@@ -13,11 +13,9 @@ import { StudyNowCard } from "@/components/dashboard/StudyNowCard";
 import { ErrorBanner } from "@/components/shared/ErrorBanner";
 import { isAuthenticated, useStoredUser } from "@/lib/auth";
 import * as decksApi from "@/lib/decks";
-import * as cardsApi from "@/lib/cards";
-import * as reviewApi from "@/lib/review";
-import { Deck, DashboardStats } from "@/types/deck";
-import { Card, DueCard } from "@/types/card";
-import { PagedResponse } from "@/types/pagination";
+import { getReviewStats, REVIEW_STATS_QUERY_KEY } from "@/lib/progress";
+import { DashboardStats, DeckOverview } from "@/types/deck";
+import { ReviewStats } from "@/types/progress";
 
 const SARCASM_GREETINGS = [
   (name: string, _due: number, streak: number) =>
@@ -44,59 +42,27 @@ export default function DashboardPage() {
   }, [router]);
 
   const {
-    data: decksResponse,
+    data: decks,
     isLoading: areDecksLoading,
     isError: isDecksError,
     error: decksError,
-  } = useQuery<PagedResponse<Deck>, Error>({
-    queryKey: ["decks"],
-    queryFn: () => decksApi.getDecks(),
-  });
-  const decks = decksResponse?.content;
-
-  const cardCountQueries = useQueries({
-    queries: (decks ?? []).map((deck) => ({
-      queryKey: ["cards", deck.id],
-      queryFn: () => cardsApi.getCardsByDeck(deck.id),
-      enabled: !!decks,
-    })),
+  } = useQuery<DeckOverview[], Error>({
+    queryKey: decksApi.DECK_OVERVIEW_QUERY_KEY,
+    queryFn: decksApi.getDeckOverview,
   });
 
-  const dueQueries = useQueries({
-    queries: (decks ?? []).map((deck) => ({
-      queryKey: ["review-queue", deck.id],
-      queryFn: () => reviewApi.getDueCards(deck.id),
-      enabled: !!decks,
-    })),
+  const { data: reviewStats, isLoading: isStatsLoading } = useQuery<ReviewStats, Error>({
+    queryKey: REVIEW_STATS_QUERY_KEY,
+    queryFn: getReviewStats,
   });
 
-  const cardCountByDeckId = new Map<number, number | undefined>();
-  (decks ?? []).forEach((deck, i) => {
-    cardCountByDeckId.set(
-      deck.id,
-      (cardCountQueries[i]?.data as PagedResponse<Card> | undefined)?.page.totalElements
-    );
-  });
-
-  const totalCards = cardCountQueries.reduce(
-    (sum, q) => sum + ((q.data as PagedResponse<Card> | undefined)?.page.totalElements ?? 0),
-    0
-  );
-  const totalDue = dueQueries.reduce(
-    (sum, q) => sum + ((q.data as DueCard[] | undefined)?.length ?? 0),
-    0
-  );
-  const isDueLoading = areDecksLoading || dueQueries.some((q) => q.isLoading);
-
-  const recentDecks = [...(decks ?? [])]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 4);
+  const recentDecks = (decks ?? []).slice(0, 4);
 
   const stats: DashboardStats = {
     totalDecks: decks?.length ?? 0,
-    totalCards,
-    cardsDue: totalDue,
-    dayStreak: 5,
+    totalCards: (decks ?? []).reduce((sum, d) => sum + d.cardCount, 0),
+    cardsDue: (decks ?? []).reduce((sum, d) => sum + d.dueCount, 0),
+    dayStreak: reviewStats?.currentStreakDays ?? 0,
   };
 
   const greeting = storedUser
@@ -140,13 +106,13 @@ export default function DashboardPage() {
               />
               <StatTile
                 label="Cards Due"
-                value={isDueLoading ? "…" : stats.cardsDue}
+                value={areDecksLoading ? "…" : stats.cardsDue}
                 subtext="to review"
                 icon={Clock}
               />
               <StatTile
                 label="Day Streak"
-                value={`${stats.dayStreak}d`}
+                value={isStatsLoading ? "…" : `${stats.dayStreak}d`}
                 subtext="in a row"
                 icon={Flame}
               />
@@ -200,7 +166,7 @@ export default function DashboardPage() {
             {recentDecks.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[14px]">
                 {recentDecks.map((deck) => (
-                  <DeckCard key={deck.id} deck={deck} cardCount={cardCountByDeckId.get(deck.id)} />
+                  <DeckCard key={deck.id} deck={deck} cardCount={deck.cardCount} />
                 ))}
               </div>
             )}

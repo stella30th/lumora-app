@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { X, Settings, CheckCircle2 } from "lucide-react";
 import { Flashcard } from "@/components/study/Flashcard";
 import { ReviewButtons } from "@/components/study/ReviewButtons";
@@ -12,6 +12,7 @@ import { ErrorBanner } from "@/components/shared/ErrorBanner";
 import { isAuthenticated } from "@/lib/auth";
 import * as reviewApi from "@/lib/review";
 import * as decksApi from "@/lib/decks";
+import { REVIEW_STATS_QUERY_KEY } from "@/lib/progress";
 import { DueCard, ReviewRating } from "@/types/card";
 
 const RATING_BY_KEY: Record<string, ReviewRating> = {
@@ -25,6 +26,7 @@ export default function StudySessionPage() {
   const router = useRouter();
   const params = useParams();
   const deckId = Number(params?.deckId);
+  const queryClient = useQueryClient();
 
   const [queue, setQueue] = useState<DueCard[] | null>(null);
   const [index, setIndex] = useState(0);
@@ -77,6 +79,8 @@ export default function StudySessionPage() {
         { cardId: current.id, rating },
         {
           onSuccess: (result) => {
+            queryClient.invalidateQueries({ queryKey: decksApi.DECK_OVERVIEW_QUERY_KEY });
+            queryClient.invalidateQueries({ queryKey: REVIEW_STATS_QUERY_KEY });
             if (rating === "AGAIN") {
               setQueue((q) => (q ? [...q, current] : q));
               setFeedback(`"${current.term}" will come back at the end of this session.`);
@@ -94,7 +98,7 @@ export default function StudySessionPage() {
         }
       );
     },
-    [current, submitMutation]
+    [current, submitMutation, queryClient]
   );
 
   useEffect(() => {

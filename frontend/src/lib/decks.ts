@@ -1,9 +1,15 @@
 import { apiClient } from "./api-client";
-import { Deck, DeckFormInput } from "@/types/deck";
+import { Deck, DeckFormInput, DeckOverview } from "@/types/deck";
 import { PagedResponse } from "@/types/pagination";
 
 export function getDecks(page = 0, size = 20): Promise<PagedResponse<Deck>> {
   return apiClient<PagedResponse<Deck>>(`/api/decks?page=${page}&size=${size}`);
+}
+
+export const DECK_OVERVIEW_QUERY_KEY = ["decks", "overview"] as const;
+
+export function getDeckOverview(): Promise<DeckOverview[]> {
+  return apiClient<DeckOverview[]>("/api/decks/overview");
 }
 
 export function getDeck(id: number): Promise<Deck> {

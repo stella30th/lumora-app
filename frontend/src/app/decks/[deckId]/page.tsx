@@ -93,6 +93,7 @@ export default function DeckDetailPage() {
     await queryClient.invalidateQueries({ queryKey: ["cards", deckId] });
     await queryClient.invalidateQueries({ queryKey: ["review-queue", deckId] });
     await queryClient.invalidateQueries({ queryKey: ["review-queue"] });
+    await queryClient.invalidateQueries({ queryKey: decksApi.DECK_OVERVIEW_QUERY_KEY });
     setCardFormOpen(false);
   };
 
@@ -108,6 +109,7 @@ export default function DeckDetailPage() {
       await queryClient.invalidateQueries({ queryKey: ["cards", deckId] });
       await queryClient.invalidateQueries({ queryKey: ["review-queue", deckId] });
       await queryClient.invalidateQueries({ queryKey: ["review-queue"] });
+    await queryClient.invalidateQueries({ queryKey: decksApi.DECK_OVERVIEW_QUERY_KEY });
       setDeletingCard(null);
     } catch (err: unknown) {
       const error = err as Error;
