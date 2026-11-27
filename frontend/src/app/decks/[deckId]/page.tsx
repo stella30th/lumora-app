@@ -26,17 +26,15 @@ export default function DeckDetailPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const deckId = Number(params?.deckId);
-  const [page, setPage] = useState(0);
+  const [pageState, setPageState] = useState({ deckId, page: 0 });
+  const page = pageState.deckId === deckId ? pageState.page : 0;
+  const setPage = (next: number) => setPageState({ deckId, page: next });
 
   useEffect(() => {
     if (!isAuthenticated()) {
       router.replace("/login");
     }
   }, [router]);
-
-  useEffect(() => {
-    setPage(0);
-  }, [deckId]);
 
   const {
     data: deck,
@@ -105,7 +103,7 @@ export default function DeckDetailPage() {
     try {
       await cardsApi.deleteCard(deletingCard.id);
       if (cards && cards.length === 1 && page > 0) {
-        setPage((p) => p - 1);
+        setPage(page - 1);
       }
       await queryClient.invalidateQueries({ queryKey: ["cards", deckId] });
       await queryClient.invalidateQueries({ queryKey: ["review-queue", deckId] });

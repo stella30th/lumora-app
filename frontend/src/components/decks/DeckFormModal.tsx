@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Modal } from "@/components/shared/Modal";
 import { ErrorBanner } from "@/components/shared/ErrorBanner";
@@ -14,19 +14,18 @@ interface DeckFormModalProps {
 }
 
 export function DeckFormModal({ open, deck, onClose, onSubmit }: DeckFormModalProps) {
-  const isEditMode = !!deck;
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  return (
+    <Modal open={open} onClose={onClose} title={deck ? "Edit Deck" : "Create Deck"}>
+      <DeckForm key={`${open}-${deck?.id ?? "new"}`} deck={deck} onClose={onClose} onSubmit={onSubmit} />
+    </Modal>
+  );
+}
+
+function DeckForm({ deck, onClose, onSubmit }: Omit<DeckFormModalProps, "open">) {
+  const [name, setName] = useState(deck?.name ?? "");
+  const [description, setDescription] = useState(deck?.description ?? "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-
-  useEffect(() => {
-    if (open) {
-      setName(deck?.name ?? "");
-      setDescription(deck?.description ?? "");
-      setErrorMessage("");
-    }
-  }, [open, deck]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,7 +52,7 @@ export function DeckFormModal({ open, deck, onClose, onSubmit }: DeckFormModalPr
   };
 
   return (
-    <Modal open={open} onClose={onClose} title={isEditMode ? "Edit Deck" : "Create Deck"}>
+    <>
       {errorMessage && (
         <div className="mb-4">
           <ErrorBanner message={errorMessage} />
@@ -117,6 +116,6 @@ export function DeckFormModal({ open, deck, onClose, onSubmit }: DeckFormModalPr
           </button>
         </div>
       </form>
-    </Modal>
+    </>
   );
 }

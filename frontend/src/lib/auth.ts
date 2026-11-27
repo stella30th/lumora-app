@@ -1,3 +1,4 @@
+import { useMemo, useSyncExternalStore } from "react";
 import { UserSession } from "@/types/user";
 import { clearAllQueryCache } from "./query-client-ref";
 
@@ -17,15 +18,42 @@ function removeLegacyTokens(): void {
   localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
 }
 
-export function getUser(): UserSession | null {
-  if (typeof window === "undefined") return null;
-  const raw = localStorage.getItem(USER_KEY);
+const USER_CHANGED_EVENT = "lumora-user-updated";
+
+function parseUser(raw: string | null): UserSession | null {
   if (!raw) return null;
   try {
     return JSON.parse(raw);
   } catch {
     return null;
   }
+}
+
+function notifyUserChanged(): void {
+  window.dispatchEvent(new Event(USER_CHANGED_EVENT));
+}
+
+export function getUser(): UserSession | null {
+  if (typeof window === "undefined") return null;
+  return parseUser(localStorage.getItem(USER_KEY));
+}
+
+function subscribeToUser(onChange: () => void): () => void {
+  window.addEventListener(USER_CHANGED_EVENT, onChange);
+  window.addEventListener("storage", onChange);
+  return () => {
+    window.removeEventListener(USER_CHANGED_EVENT, onChange);
+    window.removeEventListener("storage", onChange);
+  };
+}
+
+export function useStoredUser(): UserSession | null {
+  const raw = useSyncExternalStore(
+    subscribeToUser,
+    () => localStorage.getItem(USER_KEY),
+    () => null
+  );
+  return useMemo(() => parseUser(raw), [raw]);
 }
 
 export function setAuth(data: {
@@ -47,6 +75,7 @@ export function setAuth(data: {
       email: data.email || "",
     })
   );
+  notifyUserChanged();
 }
 
 export function updateAccessToken(token: string): void {
@@ -59,8 +88,8 @@ export function clearAuth(): void {
   accessToken = null;
   removeLegacyTokens();
   localStorage.removeItem(USER_KEY);
-
   clearAllQueryCache();
+  notifyUserChanged();
 }
 
 export function isAuthenticated(): boolean {
@@ -73,5 +102,5 @@ export function updateLocalUser(patch: Partial<Pick<UserSession, "username" | "e
   if (!current) return;
   const updated: UserSession = { ...current, ...patch };
   localStorage.setItem(USER_KEY, JSON.stringify(updated));
-  window.dispatchEvent(new Event("lumora-user-updated"));
+  notifyUserChanged();
 }

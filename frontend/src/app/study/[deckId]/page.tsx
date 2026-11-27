@@ -53,9 +53,9 @@ export default function StudySessionPage() {
     enabled: !!deckId,
   });
 
-  useEffect(() => {
-    if (dueCards && queue === null) setQueue(dueCards);
-  }, [dueCards, queue]);
+  if (dueCards && queue === null) {
+    setQueue(dueCards);
+  }
 
   const submitMutation = useMutation({
     mutationFn: ({ cardId, rating }: { cardId: number; rating: ReviewRating }) =>

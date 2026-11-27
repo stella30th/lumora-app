@@ -8,6 +8,8 @@ interface RequestOptions extends RequestInit {
   skipAuth?: boolean;
 }
 
+export const SESSION_EXPIRED_EVENT = "lumora-session-expired";
+
 let isRefreshing = false;
 let refreshPromise: Promise<string | null> | null = null;
 
@@ -33,8 +35,8 @@ async function refreshAccessToken(): Promise<string | null> {
       return data.token;
     } catch {
       clearAuth();
-      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
-        window.location.href = "/login?expired=1";
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
       }
       return null;
     } finally {

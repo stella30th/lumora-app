@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -12,9 +12,8 @@ import {
   LogOut,
   Lightbulb,
 } from "lucide-react";
-import { getUser } from "@/lib/auth";
+import { useStoredUser } from "@/lib/auth";
 import { logoutAndClear } from "@/lib/api-client";
-import { UserSession } from "@/types/user";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -27,15 +26,8 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const [user, setUser] = useState<UserSession | null>(null);
+  const user = useStoredUser();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-
-  useEffect(() => {
-    setUser(getUser());
-    const handleUserUpdated = () => setUser(getUser());
-    window.addEventListener("lumora-user-updated", handleUserUpdated);
-    return () => window.removeEventListener("lumora-user-updated", handleUserUpdated);
-  }, []);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);

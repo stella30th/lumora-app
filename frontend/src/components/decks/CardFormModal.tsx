@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Modal } from "@/components/shared/Modal";
 import { ErrorBanner } from "@/components/shared/ErrorBanner";
@@ -14,19 +14,18 @@ interface CardFormModalProps {
 }
 
 export function CardFormModal({ open, card, onClose, onSubmit }: CardFormModalProps) {
-  const isEditMode = !!card;
-  const [term, setTerm] = useState("");
-  const [definition, setDefinition] = useState("");
+  return (
+    <Modal open={open} onClose={onClose} title={card ? "Edit Card" : "Add Card"}>
+      <CardForm key={`${open}-${card?.id ?? "new"}`} card={card} onClose={onClose} onSubmit={onSubmit} />
+    </Modal>
+  );
+}
+
+function CardForm({ card, onClose, onSubmit }: Omit<CardFormModalProps, "open">) {
+  const [term, setTerm] = useState(card?.term ?? "");
+  const [definition, setDefinition] = useState(card?.definition ?? "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-
-  useEffect(() => {
-    if (open) {
-      setTerm(card?.term ?? "");
-      setDefinition(card?.definition ?? "");
-      setErrorMessage("");
-    }
-  }, [open, card]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,7 +48,7 @@ export function CardFormModal({ open, card, onClose, onSubmit }: CardFormModalPr
   };
 
   return (
-    <Modal open={open} onClose={onClose} title={isEditMode ? "Edit Card" : "Add Card"}>
+    <>
       {errorMessage && (
         <div className="mb-4">
           <ErrorBanner message={errorMessage} />
@@ -114,6 +113,6 @@ export function CardFormModal({ open, card, onClose, onSubmit }: CardFormModalPr
           </button>
         </div>
       </form>
-    </Modal>
+    </>
   );
 }

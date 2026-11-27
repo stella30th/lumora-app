@@ -11,7 +11,7 @@ import { StatTile } from "@/components/dashboard/StatTile";
 import { DeckCard } from "@/components/dashboard/DeckCard";
 import { StudyNowCard } from "@/components/dashboard/StudyNowCard";
 import { ErrorBanner } from "@/components/shared/ErrorBanner";
-import { getUser, isAuthenticated } from "@/lib/auth";
+import { isAuthenticated, useStoredUser } from "@/lib/auth";
 import * as decksApi from "@/lib/decks";
 import * as cardsApi from "@/lib/cards";
 import * as reviewApi from "@/lib/review";
@@ -34,15 +34,13 @@ const SARCASM_GREETINGS = [
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [userName, setUserName] = useState("there");
-  const [greeting, setGreeting] = useState("");
+  const storedUser = useStoredUser();
+  const [greetingIndex] = useState(() => Math.floor(Math.random() * SARCASM_GREETINGS.length));
 
   useEffect(() => {
     if (!isAuthenticated()) {
       router.replace("/login");
-      return;
     }
-    setUserName(getUser()?.username || "there");
   }, [router]);
 
   const {
@@ -101,12 +99,9 @@ export default function DashboardPage() {
     dayStreak: 5,
   };
 
-  useEffect(() => {
-    if (!userName) return;
-    const randomIndex = Math.floor(Math.random() * SARCASM_GREETINGS.length);
-    setGreeting(SARCASM_GREETINGS[randomIndex](userName, stats.cardsDue, stats.dayStreak));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userName]);
+  const greeting = storedUser
+    ? SARCASM_GREETINGS[greetingIndex](storedUser.username || "there", stats.cardsDue, stats.dayStreak)
+    : "";
 
   return (
     <div className="min-h-screen flex bg-lumora-bg text-lumora-primary">
@@ -118,7 +113,7 @@ export default function DashboardPage() {
         <main className="p-8 max-w-7xl w-full mx-auto flex flex-col gap-8">
           <div className="flex flex-col gap-1.5">
             <h1 className="text-title-lg font-bold text-lumora-primary tracking-tight">
-              {greeting || `Hey ${userName}, look who decided to show up?`}
+              {greeting || `Hey ${storedUser?.username || "there"}, look who decided to show up?`}
             </h1>
             <p className="text-body-default text-lumora-secondary">
               Review your decks and continue today&apos;s study session to keep your streak alive.

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useSyncExternalStore } from "react";
 
 type Theme = "dark" | "light";
 
@@ -12,28 +12,32 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+const THEME_KEY = "lumora-theme";
+const THEME_CHANGED_EVENT = "lumora-theme-changed";
+
+function readTheme(): Theme {
+  return localStorage.getItem(THEME_KEY) === "light" ? "light" : "dark";
+}
+
+function subscribeToTheme(onChange: () => void): () => void {
+  window.addEventListener(THEME_CHANGED_EVENT, onChange);
+  window.addEventListener("storage", onChange);
+  return () => {
+    window.removeEventListener(THEME_CHANGED_EVENT, onChange);
+    window.removeEventListener("storage", onChange);
+  };
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("dark");
+  const theme = useSyncExternalStore<Theme>(subscribeToTheme, readTheme, () => "dark");
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem("lumora-theme") as Theme | null;
-    const initialTheme = savedTheme === "light" ? "light" : "dark";
-    setThemeState(initialTheme);
-    if (initialTheme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, []);
+    document.documentElement.classList.toggle("dark", theme === "dark");
+  }, [theme]);
 
   const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
-    localStorage.setItem("lumora-theme", newTheme);
-    if (newTheme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
+    localStorage.setItem(THEME_KEY, newTheme);
+    window.dispatchEvent(new Event(THEME_CHANGED_EVENT));
   };
 
   const toggleTheme = () => {
