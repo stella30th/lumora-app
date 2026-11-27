@@ -28,11 +28,15 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
     @Autowired
     public AuthRateLimitFilter(@Value("${auth.rate-limit.login-per-minute:10}") int loginPerMinute,
                                @Value("${auth.rate-limit.register-per-minute:5}") int registerPerMinute,
-                               @Value("${auth.rate-limit.refresh-per-minute:60}") int refreshPerMinute) {
+                               @Value("${auth.rate-limit.refresh-per-minute:60}") int refreshPerMinute,
+                               @Value("${auth.rate-limit.email-per-minute:3}") int emailPerMinute,
+                               @Value("${auth.rate-limit.verify-per-minute:20}") int verifyPerMinute) {
         this(Map.of(
                 "/api/users/login", loginPerMinute,
                 "/api/users/register", registerPerMinute,
-                "/api/users/refresh", refreshPerMinute), Clock.systemUTC());
+                "/api/users/refresh", refreshPerMinute,
+                "/api/users/resend-verification", emailPerMinute,
+                "/api/users/verify-email", verifyPerMinute), Clock.systemUTC());
     }
 
     AuthRateLimitFilter(Map<String, Integer> limits, Clock clock) {

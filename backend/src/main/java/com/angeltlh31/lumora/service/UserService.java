@@ -1,17 +1,23 @@
 package com.angeltlh31.lumora.service;
 
+import com.angeltlh31.lumora.dto.MessageResponse;
 import com.angeltlh31.lumora.dto.user.ChangePasswordRequest;
 import com.angeltlh31.lumora.dto.user.LoginRequest;
 import com.angeltlh31.lumora.dto.user.LoginResponse;
 import com.angeltlh31.lumora.dto.user.UpdateProfileRequest;
 import com.angeltlh31.lumora.dto.user.UserRegisterRequest;
 import com.angeltlh31.lumora.dto.user.UserResponse;
+import com.angeltlh31.lumora.entity.EmailToken;
+import com.angeltlh31.lumora.entity.EmailTokenPurpose;
 import com.angeltlh31.lumora.entity.RefreshToken;
 import com.angeltlh31.lumora.entity.User;
 import com.angeltlh31.lumora.exception.DuplicateResourceException;
+import com.angeltlh31.lumora.exception.EmailNotVerifiedException;
 import com.angeltlh31.lumora.exception.InvalidCredentialException;
+import com.angeltlh31.lumora.exception.InvalidEmailTokenException;
 import com.angeltlh31.lumora.exception.InvalidRefreshTokenException;
 import com.angeltlh31.lumora.exception.ResourceNotFoundException;
+import com.angeltlh31.lumora.mail.AccountMailer;
 import com.angeltlh31.lumora.repository.UserRepository;
 import com.angeltlh31.lumora.security.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -19,45 +25,111 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Locale;
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class UserService {
+    static final String REGISTER_MESSAGE =
+            "If this email can be used, we have sent a verification link to it. Check your inbox to finish signing up.";
+    static final String RESEND_MESSAGE =
+            "If this email belongs to an unverified account, we have sent a new verification link.";
+    private static final String INVALID_LINK = "This link is invalid or has expired";
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-
     private final RefreshTokenService refreshTokenService;
+    private final EmailTokenService emailTokenService;
+    private final AccountMailer accountMailer;
 
-    public UserResponse registerUser(UserRegisterRequest request) {
-        if (userRepository.existsByUsername(request.getUsername())) {
-            throw new DuplicateResourceException("Username already exists: " + request.getUsername());
+    private volatile String dummyPasswordHash;
+
+    public MessageResponse registerUser(UserRegisterRequest request) {
+        String username = request.getUsername().trim();
+        String email = normalizeEmail(request.getEmail());
+        String passwordHash = passwordEncoder.encode(request.getPassword());
+
+        Optional<User> byEmail = userRepository.findByEmail(email);
+        Optional<User> byUsername = userRepository.findByUsername(username);
+
+        boolean usernameAvailable = byUsername.isEmpty()
+                || (byEmail.isPresent()
+                && !byEmail.get().isEmailVerified()
+                && byUsername.get().getId().equals(byEmail.get().getId()));
+        if (!usernameAvailable) {
+            throw new DuplicateResourceException("Username already exists: " + username);
         }
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new DuplicateResourceException("Email already exists: " + request.getEmail());
+
+        if (byEmail.isEmpty()) {
+            User user = userRepository.save(User.builder()
+                    .username(username)
+                    .email(email)
+                    .passwordHash(passwordHash)
+                    .build());
+            sendVerification(user);
+        } else if (byEmail.get().isEmailVerified()) {
+            accountMailer.sendAlreadyRegistered(email);
+        } else {
+            User unverified = byEmail.get();
+            unverified.setUsername(username);
+            unverified.setPasswordHash(passwordHash);
+            sendVerification(unverified);
+        }
+        return new MessageResponse(REGISTER_MESSAGE);
+    }
+
+    public MessageResponse resendVerification(String rawEmail) {
+        userRepository.findByEmail(normalizeEmail(rawEmail))
+                .filter(user -> !user.isEmailVerified())
+                .ifPresent(this::sendVerification);
+        return new MessageResponse(RESEND_MESSAGE);
+    }
+
+    @Transactional(noRollbackFor = DuplicateResourceException.class)
+    public MessageResponse verifyEmail(String rawToken) {
+        EmailToken token = emailTokenService.consume(rawToken);
+        User user = token.getUser();
+
+        if (token.getPurpose() == EmailTokenPurpose.VERIFY_EMAIL) {
+            if (!token.getEmail().equals(user.getEmail())) {
+                throw new InvalidEmailTokenException(INVALID_LINK);
+            }
+            user.setEmailVerified(true);
+            return new MessageResponse("Your email is verified. You can log in now.");
         }
 
-        User user = User.builder()
-                .username(request.getUsername())
-                .email(request.getEmail())
-
-                .passwordHash(passwordEncoder.encode(request.getPassword()))
-                .build();
-
-        return toResponse(userRepository.save(user));
+        if (!token.getEmail().equals(user.getPendingEmail())) {
+            throw new InvalidEmailTokenException(INVALID_LINK);
+        }
+        if (userRepository.existsByEmailAndIdNot(token.getEmail(), user.getId())) {
+            user.setPendingEmail(null);
+            throw new DuplicateResourceException("This email is already used by another account");
+        }
+        user.setEmail(token.getEmail());
+        user.setPendingEmail(null);
+        user.setEmailVerified(true);
+        return new MessageResponse("Your new email is confirmed.");
     }
 
     public record AuthResult(LoginResponse body, String rawRefreshToken) {
     }
 
     public AuthResult login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new InvalidCredentialException("Invalid email or password"));
-
+        Optional<User> found = userRepository.findByEmail(normalizeEmail(request.getEmail()));
+        if (found.isEmpty()) {
+            passwordEncoder.matches(request.getPassword(), dummyPasswordHash());
+            throw new InvalidCredentialException("Invalid email or password");
+        }
+        User user = found.get();
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new InvalidCredentialException("Invalid email or password");
         }
-
+        if (!user.isEmailVerified()) {
+            throw new EmailNotVerifiedException("Please verify your email before logging in");
+        }
         return issueTokenPair(user);
     }
 
@@ -82,31 +154,33 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public UserResponse getUserById(Long id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id=" + id));
-        return toResponse(user);
+        return toResponse(findUserOrThrow(id));
     }
 
     public UserResponse updateProfile(Long userId, UpdateProfileRequest request) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id=" + userId));
+        User user = findUserOrThrow(userId);
+        String username = request.getUsername().trim();
+        String newEmail = normalizeEmail(request.getEmail());
 
-        if (userRepository.existsByUsernameAndIdNot(request.getUsername(), userId)) {
-            throw new DuplicateResourceException("Username already exists: " + request.getUsername());
+        if (userRepository.existsByUsernameAndIdNot(username, userId)) {
+            throw new DuplicateResourceException("Username already exists: " + username);
         }
-        if (userRepository.existsByEmailAndIdNot(request.getEmail(), userId)) {
-            throw new DuplicateResourceException("Email already exists: " + request.getEmail());
+        user.setUsername(username);
+
+        if (newEmail.equals(user.getEmail())) {
+            user.setPendingEmail(null);
+        } else if (!newEmail.equals(user.getPendingEmail())) {
+            user.setPendingEmail(newEmail);
+            String rawToken = emailTokenService.issue(user, EmailTokenPurpose.CHANGE_EMAIL, newEmail);
+            accountMailer.sendChangeEmailConfirmation(newEmail, rawToken);
+            accountMailer.sendEmailChangeRequestedNotice(user.getEmail(), newEmail);
         }
 
-        user.setUsername(request.getUsername());
-        user.setEmail(request.getEmail());
-
-        return toResponse(userRepository.save(user));
+        return toResponse(user);
     }
 
     public void changePassword(Long userId, ChangePasswordRequest request) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id=" + userId));
+        User user = findUserOrThrow(userId);
 
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
             throw new InvalidCredentialException("Current password is incorrect");
@@ -116,6 +190,27 @@ public class UserService {
         userRepository.save(user);
 
         revokeAllSessions(userId);
+    }
+
+    private void sendVerification(User user) {
+        String rawToken = emailTokenService.issue(user, EmailTokenPurpose.VERIFY_EMAIL, user.getEmail());
+        accountMailer.sendVerification(user.getEmail(), rawToken);
+    }
+
+    private String dummyPasswordHash() {
+        if (dummyPasswordHash == null) {
+            dummyPasswordHash = passwordEncoder.encode("lumora-timing-equalizer");
+        }
+        return dummyPasswordHash;
+    }
+
+    static String normalizeEmail(String email) {
+        return email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private User findUserOrThrow(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id=" + id));
     }
 
     private AuthResult issueTokenPair(User user) {
@@ -135,6 +230,7 @@ public class UserService {
                 .id(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
+                .pendingEmail(user.getPendingEmail())
                 .createdAt(user.getCreatedAt())
                 .build();
     }

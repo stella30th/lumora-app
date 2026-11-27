@@ -66,6 +66,8 @@ public class SecurityConfig {
                                 "/api/users/login",
 
                                 "/api/users/refresh",
+                                "/api/users/verify-email",
+                                "/api/users/resend-verification",
 
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",

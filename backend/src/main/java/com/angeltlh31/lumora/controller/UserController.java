@@ -3,7 +3,10 @@ package com.angeltlh31.lumora.controller;
 import com.angeltlh31.lumora.exception.InvalidRefreshTokenException;
 import com.angeltlh31.lumora.security.RefreshTokenCookie;
 import org.springframework.http.HttpHeaders;
+import com.angeltlh31.lumora.dto.MessageResponse;
 import com.angeltlh31.lumora.dto.user.ChangePasswordRequest;
+import com.angeltlh31.lumora.dto.user.ResendVerificationRequest;
+import com.angeltlh31.lumora.dto.user.VerifyEmailRequest;
 import com.angeltlh31.lumora.dto.user.LoginRequest;
 import com.angeltlh31.lumora.dto.user.LoginResponse;
 import com.angeltlh31.lumora.dto.user.UpdateProfileRequest;
@@ -25,11 +28,22 @@ public class UserController {
     private final UserService userService;
     private final RefreshTokenCookie refreshTokenCookie;
 
-    @Operation(summary = "Dang ky user moi", security = {})
+    @Operation(summary = "Dang ky user moi - luon tra ve cung 1 thong bao, gui link xac thuc qua email", security = {})
     @PostMapping("/register")
-    public ResponseEntity<UserResponse> register(@Valid @RequestBody UserRegisterRequest request) {
-        UserResponse response = userService.registerUser(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    public ResponseEntity<MessageResponse> register(@Valid @RequestBody UserRegisterRequest request) {
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(userService.registerUser(request));
+    }
+
+    @Operation(summary = "Xac thuc email bang token trong link da gui", security = {})
+    @PostMapping("/verify-email")
+    public ResponseEntity<MessageResponse> verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
+        return ResponseEntity.ok(userService.verifyEmail(request.getToken()));
+    }
+
+    @Operation(summary = "Gui lai link xac thuc email", security = {})
+    @PostMapping("/resend-verification")
+    public ResponseEntity<MessageResponse> resendVerification(@Valid @RequestBody ResendVerificationRequest request) {
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(userService.resendVerification(request.getEmail()));
     }
 
     @Operation(summary = "Dang nhap, tra ve access token (JWT) trong body + refresh token trong cookie httpOnly",

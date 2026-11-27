@@ -19,6 +19,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByEmail(String email);
 
+    Optional<User> findByUsername(String username);
+
     @Query("SELECT u.tokenVersion FROM User u WHERE u.id = :id")
     Optional<Integer> findTokenVersionById(@Param("id") Long id);
 

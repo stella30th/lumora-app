@@ -28,6 +28,13 @@ public class User {
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
+    @Column(name = "email_verified", nullable = false)
+    @Builder.Default
+    private boolean emailVerified = false;
+
+    @Column(name = "pending_email", length = 255)
+    private String pendingEmail;
+
     @Column(name = "token_version", nullable = false)
     @Builder.Default
     private int tokenVersion = 0;
