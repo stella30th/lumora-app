@@ -15,10 +15,15 @@ export interface UserRegisterRequest {
   password: string;
 }
 
+export interface MessageResponse {
+  message: string;
+}
+
 export interface UserResponse {
   id: number;
   username: string;
   email: string;
+  pendingEmail?: string | null;
   createdAt?: string;
 }
 

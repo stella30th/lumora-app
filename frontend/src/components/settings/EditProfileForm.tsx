@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Loader2, Pencil } from "lucide-react";
 import { ErrorBanner } from "@/components/shared/ErrorBanner";
 import { updateLocalUser } from "@/lib/auth";
@@ -13,16 +13,12 @@ interface EditProfileFormProps {
 }
 
 export function EditProfileForm({ user, onUpdated }: EditProfileFormProps) {
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState(user?.username ?? "");
+  const [email, setEmail] = useState(user?.email ?? "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-
-  useEffect(() => {
-    setUsername(user?.username ?? "");
-    setEmail(user?.email ?? "");
-  }, [user]);
+  const pendingEmail = user?.pendingEmail;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,8 +32,8 @@ export function EditProfileForm({ user, onUpdated }: EditProfileFormProps) {
       setErrorMessage("Username and email are required.");
       return;
     }
-    if (trimmedUsername.length > 50) {
-      setErrorMessage("Username must not exceed 50 characters.");
+    if (trimmedUsername.length < 3 || trimmedUsername.length > 50) {
+      setErrorMessage("Username must be 3-50 characters.");
       return;
     }
 
@@ -50,7 +46,12 @@ export function EditProfileForm({ user, onUpdated }: EditProfileFormProps) {
 
       updateLocalUser({ username: updated.username, email: updated.email });
       onUpdated(updated);
-      setSuccessMessage("Profile updated.");
+      setEmail(updated.email);
+      setSuccessMessage(
+        updated.pendingEmail
+          ? `Profile saved. We sent a confirmation link to ${updated.pendingEmail} - your email changes after you open it.`
+          : "Profile updated."
+      );
     } catch (err: unknown) {
       const error = err as Error;
       setErrorMessage(error.message || "Could not update your profile.");
@@ -67,6 +68,12 @@ export function EditProfileForm({ user, onUpdated }: EditProfileFormProps) {
       </div>
 
       {errorMessage && <ErrorBanner message={errorMessage} />}
+      {pendingEmail && !successMessage && (
+        <p className="text-body-default text-lumora-secondary">
+          Waiting for you to confirm <span className="font-medium text-lumora-primary">{pendingEmail}</span>.
+          Check that inbox for the link.
+        </p>
+      )}
       {successMessage && (
         <div
           role="status"

@@ -11,7 +11,7 @@ import { ErrorBanner } from "@/components/shared/ErrorBanner";
 import { EditProfileForm } from "@/components/settings/EditProfileForm";
 import { ChangePasswordForm } from "@/components/settings/ChangePasswordForm";
 import { useTheme } from "@/components/providers/ThemeProvider";
-import { getUser, isAuthenticated } from "@/lib/auth";
+import { isAuthenticated, useStoredUser } from "@/lib/auth";
 import { logoutAndClear } from "@/lib/api-client";
 import { getCurrentUser } from "@/lib/users";
 import { UserResponse } from "@/types/user";
@@ -20,7 +20,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { theme } = useTheme();
-  const localUser = getUser();
+  const localUser = useStoredUser();
 
   useEffect(() => {
     if (!isAuthenticated()) router.replace("/login");
@@ -71,6 +71,7 @@ export default function SettingsPage() {
           </section>
 
           <EditProfileForm
+            key={user?.id ?? "loading"}
             user={user}
             onUpdated={(updated) => {
               queryClient.setQueryData(["users", localUser?.userId], updated);

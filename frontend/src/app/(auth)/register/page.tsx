@@ -2,17 +2,13 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2, Lightbulb } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
-import { setAuth } from "@/lib/auth";
-import { LoginResponse, UserResponse } from "@/types/user";
+import { MessageResponse } from "@/types/user";
 import { ErrorBanner } from "@/components/shared/ErrorBanner";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 export default function RegisterPage() {
-  const router = useRouter();
-
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,18 +16,20 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage("");
+    setSuccessMessage("");
 
     if (!username.trim() || !email.trim() || !password) {
       setErrorMessage("Please fill in all fields.");
       return;
     }
 
-    if (username.trim().length > 50) {
-      setErrorMessage("Username must not exceed 50 characters.");
+    if (username.trim().length < 3 || username.trim().length > 50) {
+      setErrorMessage("Username must be 3-50 characters.");
       return;
     }
 
@@ -48,7 +46,7 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      await apiClient<UserResponse>("/api/users/register", {
+      const response = await apiClient<MessageResponse>("/api/users/register", {
         method: "POST",
         skipAuth: true,
         body: JSON.stringify({
@@ -57,28 +55,9 @@ export default function RegisterPage() {
           password,
         }),
       });
-
-      try {
-        const loginData = await apiClient<LoginResponse>("/api/users/login", {
-          method: "POST",
-          skipAuth: true,
-          body: JSON.stringify({
-            email: email.trim(),
-            password,
-          }),
-        });
-
-        setAuth({
-          token: loginData.token,
-          userId: loginData.userId,
-          username: loginData.username,
-          email: email.trim(),
-        });
-
-        router.push("/dashboard");
-      } catch {
-        router.push("/login?registered=1");
-      }
+      setSuccessMessage(response.message);
+      setPassword("");
+      setConfirmPassword("");
     } catch (err: unknown) {
       const error = err as Error;
       setErrorMessage(
@@ -107,6 +86,15 @@ export default function RegisterPage() {
         <h1 className="text-title-page font-bold text-lumora-primary mb-6">
           Create Account
         </h1>
+
+        {successMessage && (
+          <div
+            role="status"
+            className="mb-4 p-3 rounded-input border border-lumora-border bg-lumora-surface-hover text-lumora-primary text-body-default font-medium"
+          >
+            {successMessage}
+          </div>
+        )}
 
         {errorMessage && (
           <div className="mb-4">

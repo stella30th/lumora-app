@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Loader2, Lightbulb } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
+import * as usersApi from "@/lib/users";
 import { setAuth, isAuthenticated } from "@/lib/auth";
 import { LoginResponse } from "@/types/user";
 import { ErrorBanner } from "@/components/shared/ErrorBanner";
@@ -18,28 +19,32 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState(() =>
+    searchParams.get("expired") === "1" ? "Your session has expired, please log in again." : ""
+  );
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [successMessage, setSuccessMessage] = useState(() => {
+    if (searchParams.get("passwordChanged") === "1") {
+      return "Password changed successfully. Please log in again.";
+    }
+    if (searchParams.get("registered") === "1") {
+      return "Account created successfully! Log in to continue.";
+    }
+    return "";
+  });
 
   useEffect(() => {
     if (isAuthenticated()) {
       router.replace("/dashboard");
     }
-    if (searchParams.get("expired") === "1") {
-      setErrorMessage("Your session has expired, please log in again.");
-    }
-    if (searchParams.get("registered") === "1") {
-      setSuccessMessage("Account created successfully! Log in to continue.");
-    }
-    if (searchParams.get("passwordChanged") === "1") {
-      setSuccessMessage("Password changed successfully. Please log in again.");
-    }
-  }, [router, searchParams]);
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage("");
     setSuccessMessage("");
+    setNeedsVerification(false);
 
     if (!email.trim() || !password) {
       setErrorMessage("Please enter both email and password.");
@@ -63,10 +68,32 @@ function LoginForm() {
       });
 
       router.push("/dashboard");
-    } catch {
-      setErrorMessage("Incorrect email or password.");
+    } catch (err: unknown) {
+      const error = err as Error & { status?: number };
+      if (error.status === 403) {
+        setNeedsVerification(true);
+        setErrorMessage("Please verify your email before logging in. Check your inbox for the link.");
+      } else if (error.status === 429) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage("Incorrect email or password.");
+      }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setIsResending(true);
+    try {
+      const response = await usersApi.resendVerification(email.trim());
+      setErrorMessage("");
+      setNeedsVerification(false);
+      setSuccessMessage(response.message);
+    } catch (err: unknown) {
+      setErrorMessage((err as Error).message || "Could not resend the link. Please try again later.");
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -96,8 +123,19 @@ function LoginForm() {
         )}
 
         {errorMessage && (
-          <div className="mb-4">
+          <div className="mb-4 flex flex-col gap-2">
             <ErrorBanner message={errorMessage} />
+            {needsVerification && (
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={isResending}
+                className="self-start inline-flex items-center gap-2 text-body-default font-semibold text-lumora-primary hover:underline disabled:opacity-50"
+              >
+                {isResending && <Loader2 className="w-4 h-4 animate-spin" />}
+                Resend verification email
+              </button>
+            )}
           </div>
         )}
 
